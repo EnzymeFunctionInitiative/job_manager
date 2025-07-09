@@ -1,0 +1,23 @@
+Given the attached data model (Python, using SQLAlchemy), create a python application that runs periodically to determine the status of jobs, runs new ones, and copies files for completed ones. Here are some steps:
+
+1. Reads data from a database with a Job table based on the attached schema
+
+2. If the job is new, save the parameters to a json file, copy them to a remote system using ssh/scp. If the job type is one with a file (Accession, Fasta, GNN, etc) then the file should also get copied.
+
+3. A configuration file will be used on the local system to determine which target directory to save files to and copy files from
+
+4. A remote directory will be created based on the job ID
+
+5. Start up a Nextflow run on the remote HPC system with the aforementioned parameters json file, somehow get the HPC job ID. Update the database Job table with that job ID and update the status to running.
+
+6. If instead a job is running, check if it is complete by using the HPC command (e.g. sacct for Slurm) with the stored HPC job ID
+
+7. If it is complete, then update the Job table status to finished, copy results files from the output directory (which is a subdirectory of the destination directory from the first step) to the local system. For example, if the remote is /data/jobs/1234/output, then there will be a local directory /data/jobs/1234/output
+
+8. If it is not running, check the HPC job status code to determine if it failed.
+
+9. Email the user when a job starts running, finishes, or fails.
+
+Remember that the local system can only communicate with the HPC via ssh/scp/sftp, so nextflow will need to be started through SSH, every HPC status command will need to be run through ssh, and files will need to be transferred to and from via scp (or equivalent).
+
+This will be open source. In order to protect the security of the system, there will need to be unversioned "plugins" or modules that contain code custom to the system.
