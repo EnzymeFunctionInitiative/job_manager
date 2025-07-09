@@ -1,0 +1,5 @@
+sqlalchemy
+paramiko # A good alternative to subprocess for SSH/SCP
+# If you use PostgreSQL, you'll need psycopg2-binary
+# psycopg2-binary
+
