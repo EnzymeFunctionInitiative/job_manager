@@ -10,3 +10,7 @@ plugins/
 __pycache__/
 *.db
 
+Links:
+
+job model explorer: https://g.co/gemini/share/d3655cdfdbe9
+
