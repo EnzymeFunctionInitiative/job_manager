@@ -1,27 +1,35 @@
 # config/settings.py
 
+# --- Execution Environment ---
+# Choose the connector for your environment.
+# Options: 'HPC' (for remote cluster via SSH) or 'LOCAL' (for local/shared filesystem cluster)
+EXECUTION_CONNECTOR = 'LOCAL'
+
+
 # --- Database Configuration ---
 # Example for SQLite: "sqlite:///jobs.db"
 # Example for PostgreSQL: "postgresql://user:password@host:port/database"
 DATABASE_URI = "sqlite:///jobs.db"
 
-# --- Local File System Configuration ---
-# The base directory where job files are stored locally
+# --- File System Configuration ---
+# The base directory where job files are stored.
+# For 'LOCAL' connector, this is the direct path.
+# For 'HPC' connector, this is the local staging path.
 LOCAL_JOB_DIRECTORY = "/data/jobs"
 # The directory where input files for jobs are located
 LOCAL_INPUT_FILE_SOURCE_DIR = "/data/inputs"
 
-# --- HPC Configuration ---
+# --- HPC Configuration (Used by 'HPC' connector) ---
 HPC_HOSTNAME = "your-hpc-hostname"
 HPC_USERNAME = "your-username"
 # It is recommended to use SSH keys for passwordless authentication.
-# If a password is required, you might need to adjust the hpc_connector.py
-# to handle it, but key-based auth is more secure.
 HPC_SSH_KEY_PATH = "/path/to/your/ssh/private/key"
-
-# The base directory on the HPC where jobs will be created
+# The base directory on the remote HPC where jobs will be created
 REMOTE_JOB_DIRECTORY = "/data/jobs"
-# The path to the Nextflow executable on the HPC
+
+
+# --- Cluster Configuration (Used by both connectors) ---
+# The path to the Nextflow executable on the cluster
 REMOTE_NEXTFLOW_PATH = "/path/to/nextflow"
 # The Nextflow pipeline script to run
 REMOTE_NEXTFLOW_PIPELINE = "/path/to/your/pipeline.nf"
@@ -34,4 +42,3 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "your-email@example.com"
 EMAIL_HOST_PASSWORD = "your-email-password"
 EMAIL_SENDER = "noreply@example.com"
-
