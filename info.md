@@ -25,19 +25,19 @@ checked into version control.
     └── README.md
 
 
-* app/: Contains the core application logic.
-    * main.py: The entry point of the application.
-    * database.py: Handles database connections and sessions.
-    * job_handler.py: Contains the logic for processing individual jobs.
-    * models.py: Will contain the SQLAlchemy models from job_efi_web_orm.py.txt file.
-    * plugin_loader.py: Helper function for loading plugin connectors.
-* plugins/: Contains modules and API for interacting with external systems.
-    * connectors/: Contains modules for interacting with external systems. This directory should be in .gitignore.
-        * hpc_connector.py:  Will contain the logic for SSH/SCP connections and HPC command execution (e.g., sbatch, sacct).
-        * local_connector.py: Allows the application to execute commands like sbatch directly and work with a shared file system, removing the need for SSH and SCP.
-    * notification.py: Will handle sending email notifications.
-* config/: For application configuration. This should also be in .gitignore.
-    * settings.py: Defines configuration variables like database connection strings, file paths, and HPC details.
-* requirements.txt: Lists the Python dependencies for this project.
-* README.md: Provides instructions on how to set up and run the application.
+* `app/`: Contains the core application logic.
+    * `main.py`: The entry point of the application.
+    * `database.py`: Handles database connections and sessions.
+    * `job_handler.py`: Contains the logic for processing individual jobs.
+    * `models.py`: Will contain the SQLAlchemy models.
+    * `plugin_loader.py`: Helper function for loading plugin connectors.
+* `plugins/`: Contains modules and API for interacting with external systems.
+    * `connectors/`: Contains modules for interacting with external systems. This directory should be in `.gitignore`.
+        * `hpc_connector.py`:  Will contain the logic for SSH/SCP connections and HPC command execution (e.g., `sbatch`, `sacct`).
+        * `local_connector.py`: Allows the application to execute commands like sbatch directly and work with a shared file system, removing the need for SSH and SCP.
+    * `notification.py`: Will handle sending email notifications.
+* `config/`: For application configuration. This should also be in `.gitignore`.
+    * `settings.py`: Defines configuration variables like database connection strings, file paths, and HPC details.
+* `requirements.txt`: Lists the Python dependencies for this project.
+* `README.md`: Provides instructions on how to set up and run the application.
 
