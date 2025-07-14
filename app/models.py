@@ -3,7 +3,7 @@
 # job_efi_web_orm.py.txt file.
 
 from datetime import datetime
-from enum import Flag
+from enum import Flag, auto
 from typing import Dict, Any, List
 import sqlalchemy
 from sqlalchemy import inspect, create_engine
@@ -17,6 +17,32 @@ class Status(Flag):
     FAILED = 8
     CANCELLED = 16
     COMPLETED = FINISHED | FAILED | CANCELLED
+
+class Pipeline(Flag):
+    EST_Blast = auto()
+    EST_Families = auto()
+    EST_Fasta = auto()
+    EST_Accession = auto()
+    GenerateSSN = auto()
+    NeighborhoodConn = auto()
+    ConvergenceRatio = auto()
+    ClusterAnalysis = auto()
+    ColorSSN = auto()
+    GNT = auto()
+    GND_Blast = auto()
+    GND_Fasta = auto()
+    GND_Accession = auto()
+    GND_View = auto()
+    CGFP_Ident = auto()
+    CGFP_Quant = auto()
+    Taxon_Families = auto()
+    Taxon_Fasta = auto()
+    Taxon_Accession = auto()
+
+    EST = EST_Blast | EST_Families | EST_Fasta | EST_Accession
+    GND = GND_Blast | GND_Fasta | GND_Accession | GND_View
+    CGFP = CGFP_Ident | CGFP_Quant
+    Taxonomy = Taxon_Families | Taxon_Fasta | Taxon_Accession
 
 class FlagEnumType(sqlalchemy.types.TypeDecorator):
     impl = sqlalchemy.Integer
@@ -305,7 +331,7 @@ class ESTGenerateFastaJob(
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True, }
     )
-    pipeline = "est"
+    pipeline = Pipeline.EST_Fasta
 
 class ESTGenerateFamiliesJob(
         Job,
@@ -319,7 +345,7 @@ class ESTGenerateFamiliesJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_generate_families"
     }
-    pipeline = "est"
+    pipeline = Pipeline.EST_Families
 
 class ESTGenerateBlastJob(
         Job,
@@ -334,7 +360,7 @@ class ESTGenerateBlastJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_generate_blast"
     }
-    pipeline = "est"
+    pipeline = Pipeline.EST_Blast
 
 class ESTGenerateAccessionJob(
         Job,
@@ -354,7 +380,7 @@ class ESTGenerateAccessionJob(
     domainFamily: Mapped[str | None] = mapped_column(
         info = {"is_parameter": True, "pipeline_key": "domain_family"}
     )
-    pipeline = "est"
+    pipeline = Pipeline.EST_Accession
 
 class ESTSSNFinalizationJob(
         Job,
@@ -371,14 +397,14 @@ class ESTSSNFinalizationJob(
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = "generatessn"
+    pipeline = Pipeline.GenerateSSN
 
 class ESTNeighborhoodConnectivityJob(Job, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_neighborhood_connectivity"
     }
-    pipeline = "neighborhoodconnectivity"
+    pipeline = Pipeline.NeighborhoodConn
 
 class ESTConvergenceRatioJob(
         Job,
@@ -389,7 +415,7 @@ class ESTConvergenceRatioJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_convergence_ratio"
     }
-    pipeline = "convergenceratio"
+    pipeline = Pipeline.EST_ConvergenceRatio
 
 class ESTClusterAnalysisJob(Job, FilenameParameters):
     __mapper_args__ = {
@@ -406,14 +432,14 @@ class ESTClusterAnalysisJob(Job, FilenameParameters):
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = "clusteranalysis"
+    pipeline = Pipeline.ClusterAnalysis
 
 class ESTColorSSNJob(Job, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_color_ssn"
     }
-    pipeline = "colorssn"
+    pipeline = Pipeline.ColorSSN
 
 class GNTGNNJob(Job, GNTDiagramJob, FilenameParameters):
     __mapper_args__ = {
@@ -428,7 +454,7 @@ class GNTGNNJob(Job, GNTDiagramJob, FilenameParameters):
         use_existing_column=True,
         info = {"is_parameter": True, "pipeline_key": "nb_size"}
     )
-    pipeline = "gnt"
+    pipeline = Pipeline.GNT
 
 class GNTDiagramBlastJob(
         Job,
@@ -441,14 +467,14 @@ class GNTDiagramBlastJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_diagram_blast"
     }
-    pipeline = "gnd"
+    pipeline = Pipeline.GND_Blast
 
 class GNTDiagramFastaJob(Job, GNTDiagramJob, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_diagram_fasta"
     }
-    pipeline = "gnd"
+    pipeline = Pipeline.GND_Fasta
 
 class GNTDiagramSequenceIdJob(
         Job,
@@ -461,14 +487,14 @@ class GNTDiagramSequenceIdJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_diagram_sequence_id"
     }
-    pipeline = "gnd"
+    pipeline = Pipeline.GND_Accession
 
 class GNTViewDiagramJob(Job, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_view_diagram"
     }
-    pipeline = "gnd"
+    pipeline = Pipeline.GND_View
 
 class CGFPIdentifyJob(
         Job,
@@ -488,7 +514,7 @@ class CGFPIdentifyJob(
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = "cgfp"
+    pipeline = Pipeline.CGFP_Ident
 
 class CGFPQuantifyJob(Job,SearchParameters):
     __mapper_args__ = {
@@ -499,7 +525,7 @@ class CGFPQuantifyJob(Job,SearchParameters):
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = "cgfp"
+    pipeline = Pipeline.CGFP_Quant
 
 class TaxonomyAccessionJob(
         Job,
@@ -513,7 +539,7 @@ class TaxonomyAccessionJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "taxonomy_accession"
     }
-    pipeline = "taxonomy"
+    pipeline = Pipeline.Taxon_Accession
 
 class TaxonomyFamiliesJob(
         Job,
@@ -526,7 +552,7 @@ class TaxonomyFamiliesJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "taxonomy_families"
     }
-    pipeline = "taxonomy"
+    pipeline = Pipeline.Taxon_Families
 
 class TaxonomyFastaJob(
         Job,
@@ -539,4 +565,5 @@ class TaxonomyFastaJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "taxonomy_fasta"
     }
-    pipeline = "taxonomy"
+    pipeline = Pipeline.Taxon_Fasta
+
