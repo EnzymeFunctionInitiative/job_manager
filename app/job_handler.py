@@ -5,17 +5,11 @@ from datetime import datetime
 from app.models import Job, Status
 from plugins.notification import send_email
 from config import settings
-from app.plugin_loader import load_connector_class
-
-# Load the connector class dynamically when the application starts.
-# The rest of the code doesn't need to know which connector it is.
-ConnectorClass = load_connector_class()
 
 class JobHandler:
-    def __init__(self, db_session):
+    def __init__(self, db_session, connector_instance):
         self.db = db_session
-        # Instantiate the dynamically loaded connector class
-        self.connector = ConnectorClass()
+        self.connector = connector_instance
 
     def process_new_job(self, job: Job):
         """Handles the submission of a new job by delegating to the connector."""
