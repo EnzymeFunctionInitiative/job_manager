@@ -22,8 +22,8 @@ class JobHandler:
         print(f"Processing NEW job: {job.id} using {job.id, self.connector.__class__.__name__}")
         
         # 1. Get job parameters and input file path
-        params = job.get_parameters_dict()
         input_file = None
+        # NOTE: this boolean test will throw errors if the job object doesn't have the jobFilename attribute
         if hasattr(job, 'jobFilename') and job.jobFilename:
             file_path = os.path.join(settings.LOCAL_INPUT_FILE_SOURCE_DIR, job.jobFilename)
             if os.path.exists(file_path):
@@ -35,6 +35,8 @@ class JobHandler:
                 return
 
         # 2. Prepare the job environment using the connector
+        params = job.get_parameters_dict()
+        params.update(settings.PARAMS_DICT)
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:
             print(f"Failed to prepare job environment for job {job.id}")
@@ -87,3 +89,4 @@ class JobHandler:
             print(f"Job {job.id} has an unknown status: {status}")
 
         self.db.commit()
+
