@@ -8,59 +8,8 @@ from typing import Dict, Any, List
 import sqlalchemy
 from sqlalchemy import inspect, create_engine
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, sessionmaker
-
-# --- Mocked constants for standalone execution ---
-class Status(Flag):
-    NEW = 1
-    RUNNING = 2
-    FINISHED = 4
-    FAILED = 8
-    CANCELLED = 16
-    COMPLETED = FINISHED | FAILED | CANCELLED
-
-class Pipeline(Flag):
-    EST_Blast = auto()
-    EST_Families = auto()
-    EST_Fasta = auto()
-    EST_Accession = auto()
-    GenerateSSN = auto()
-    NeighborhoodConn = auto()
-    ConvergenceRatio = auto()
-    ClusterAnalysis = auto()
-    ColorSSN = auto()
-    GNT = auto()
-    GND_Blast = auto()
-    GND_Fasta = auto()
-    GND_Accession = auto()
-    GND_View = auto()
-    CGFP_Ident = auto()
-    CGFP_Quant = auto()
-    Taxon_Families = auto()
-    Taxon_Fasta = auto()
-    Taxon_Accession = auto()
-
-    EST = EST_Blast | EST_Families | EST_Fasta | EST_Accession
-    GND = GND_Blast | GND_Fasta | GND_Accession | GND_View
-    CGFP = CGFP_Ident | CGFP_Quant
-    Taxonomy = Taxon_Families | Taxon_Fasta | Taxon_Accession
-
-class FlagEnumType(sqlalchemy.types.TypeDecorator):
-    impl = sqlalchemy.Integer
-    cache_ok = True
-
-    def __init__(self, enum_class):
-        super().__init__()
-        self.enum_class = enum_class
-
-    def process_bind_param(self, value, dialect):
-        if isinstance(value, self.enum_class):
-            return value.value
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value is not None:
-            return self.enum_class(value)
-        return value
+from job_enums import Status, Pipeline
+from flag_enum_type import FlagEnumType
 
 class Base(DeclarativeBase):
     pass
