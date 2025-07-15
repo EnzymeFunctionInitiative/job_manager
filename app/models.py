@@ -1,12 +1,10 @@
 # app/models.py
-# This file will contain the SQLAlchemy ORM classes from your
-# job_efi_web_orm.py.txt file.
 
 from datetime import datetime
 from typing import Dict, List, Any
 import sqlalchemy
-from sqlalchemy import inspect, create_engine
-from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, sessionmaker
+from sqlalchemy import inspect
+from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
 from app.job_enums import Status, Pipeline
 from app.flag_enum_type import FlagEnumType
@@ -364,7 +362,7 @@ class ESTConvergenceRatioJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_convergence_ratio"
     }
-    pipeline = Pipeline.EST_ConvergenceRatio
+    pipeline = Pipeline.ConvergenceRatio
 
 class ESTClusterAnalysisJob(Job, FilenameParameters):
     __mapper_args__ = {
