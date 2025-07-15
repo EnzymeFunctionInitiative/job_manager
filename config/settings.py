@@ -34,7 +34,7 @@ REMOTE_NEXTFLOW_PATH = "/path/to/nextflow"
 # The path to the Nextflow configuration file
 REMOTE_NEXTFLOW_CONFIG_PATH = "/path/to/nextflow/config"
 # The path to the directory that houses Nextflow pipeline scripts
-REMOTE_NEXTFLOW_PIPELINE = "/path/to/your/EST/pipeline/dir"
+REMOTE_NEXTFLOW_PIPELINE_DIR = "/path/to/your/EST/pipeline/dir"
 
 
 # --- Email Configuration ---
