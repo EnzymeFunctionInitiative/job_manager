@@ -31,7 +31,7 @@ class JobHandler:
         # 2. Prepare the job environment using the connector
         params = job.get_parameters_dict()
         params.update(settings.NEXTFLOW_PARAMS)
-        if getattr(job, "import_mode", None):
+        if hasattr(job, "import_mode"):
             params.update({"import_mode": str(job.import_mode)})
         # add est import mode; test Pipeline membership and grab pipeline list
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
