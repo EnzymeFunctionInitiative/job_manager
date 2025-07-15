@@ -36,20 +36,22 @@ class Status(Flag):
             raise
 
 class Pipeline(Flag):
+    """ Setting the Job types """
     EST_Blast = auto()
     EST_Families = auto()
     EST_Fasta = auto()
     EST_Accession = auto()
     GenerateSSN = auto()
-    NeighborhoodConn = auto()
-    ConvergenceRatio = auto()
-    ClusterAnalysis = auto()
     ColorSSN = auto()
     GNT = auto()
     GND_Blast = auto()
     GND_Fasta = auto()
     GND_Accession = auto()
     GND_View = auto()
+    # these names are assuming that the nextflow pipelines are cgfp.nf and taxon.nf, etc
+    NeighborhoodConn = auto()
+    ConvergenceRatio = auto()
+    ClusterAnalysis = auto()
     CGFP_Ident = auto()
     CGFP_Quant = auto()
     Taxon_Families = auto()
@@ -60,4 +62,14 @@ class Pipeline(Flag):
     GND = GND_Blast | GND_Fasta | GND_Accession | GND_View
     CGFP = CGFP_Ident | CGFP_Quant
     Taxonomy = Taxon_Families | Taxon_Fasta | Taxon_Accession
+
+    def __str__(self):
+        return self.name.lower()
+
+    def get_pipeline_info(self):
+        """
+        Get a list containing the over-arching pipeline name and the import 
+        method, if applicable.
+        """
+        return self.__str__().split("_")
 

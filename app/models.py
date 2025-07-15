@@ -3,8 +3,7 @@
 # job_efi_web_orm.py.txt file.
 
 from datetime import datetime
-from enum import Flag, auto
-from typing import Dict, Any, List
+from typing import Dict, List, Any
 import sqlalchemy
 from sqlalchemy import inspect, create_engine
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, sessionmaker
