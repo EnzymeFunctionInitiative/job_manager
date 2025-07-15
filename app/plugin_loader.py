@@ -17,7 +17,7 @@ def load_connector_class():
     """
     try:
         connector_name = settings.EXECUTION_CONNECTOR.lower()
-        module_name = f"plugins.{connector_name}_connector"
+        module_name = f"plugins.connectors.{connector_name}_connector"
         
         # Dynamically import the module (e.g., plugins.local_connector)
         connector_module = importlib.import_module(module_name)
