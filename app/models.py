@@ -7,8 +7,9 @@ from typing import Dict, List, Any
 import sqlalchemy
 from sqlalchemy import inspect, create_engine
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, sessionmaker
-from job_enums import Status, Pipeline
-from flag_enum_type import FlagEnumType
+
+from app.job_enums import Status, Pipeline
+from app.flag_enum_type import FlagEnumType
 
 class Base(DeclarativeBase):
     pass
