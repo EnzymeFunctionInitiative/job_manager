@@ -4,7 +4,7 @@ import os
 import json
 import shutil
 import subprocess
-from typing import Dict, Any, Optional
+from typing import Dict, List, Any, Optional
 from config import settings
 from plugins.base_connector import BaseConnector
 
@@ -48,16 +48,22 @@ class Connector(BaseConnector):
             print(f"Failed to prepare local job environment for job {job_id}: {e}")
             return None
 
-    def submit_job(self, job_id: int, cluster_params_path: str) -> Optional[int]:
+    def submit_job(
+            self,
+            job_id: int,
+            cluster_params_path: str,
+            nf_pipeline: List[str, ...]
+        ) -> Optional[int]:
         """Submits the job to the local scheduler (e.g., Slurm)."""
         job_path = os.path.dirname(cluster_params_path)
         
+        nextflow_pipeline = settings.REMOTE_NEXTFLOW_PIPELINE_DIR + f"/{nf_pipeline[0]}/{nf_pipeline[0]}.nf"
         nextflow_command = (
-            f"{settings.REMOTE_NEXTFLOW_PATH} run {settings.REMOTE_NEXTFLOW_PIPELINE} "
-            f"-params-file {cluster_params_path}"
+            f"{settings.REMOTE_NEXTFLOW_PATH} -C {settings.REMOTE_NEXTFLOW_CONFIG_PATH} run {nextflow_pipeline} "
+            f"-params-file {cluster_params_path} -w {job_path}/work"
         )
-        
-        sbatch_command = f"sbatch --job-name=job_{job_id} --output=job_{job_id}.out --wrap='{nextflow_command}'"
+
+        sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition=efi --output=job_{job_id}.out --wrap='{nextflow_command}'"
         stdout, _ = self._execute_local_command(sbatch_command, working_dir=job_path)
         
         if stdout and "Submitted batch job" in stdout:

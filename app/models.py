@@ -1,40 +1,13 @@
 # app/models.py
-# This file will contain the SQLAlchemy ORM classes from your
-# job_efi_web_orm.py.txt file.
 
 from datetime import datetime
-from enum import Flag
-from typing import Dict, Any, List
+from typing import Dict, List, Any
 import sqlalchemy
-from sqlalchemy import inspect, create_engine
-from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, sessionmaker
+from sqlalchemy import inspect
+from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
-# --- Mocked constants for standalone execution ---
-class Status(Flag):
-    NEW = 1
-    RUNNING = 2
-    FINISHED = 4
-    FAILED = 8
-    CANCELLED = 16
-    COMPLETED = FINISHED | FAILED | CANCELLED
-
-class FlagEnumType(sqlalchemy.types.TypeDecorator):
-    impl = sqlalchemy.Integer
-    cache_ok = True
-
-    def __init__(self, enum_class):
-        super().__init__()
-        self.enum_class = enum_class
-
-    def process_bind_param(self, value, dialect):
-        if isinstance(value, self.enum_class):
-            return value.value
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value is not None:
-            return self.enum_class(value)
-        return value
+from app.job_enums import Status, Pipeline
+from app.flag_enum_type import FlagEnumType
 
 class Base(DeclarativeBase):
     pass
@@ -68,7 +41,7 @@ class Job(Base):
         info = {"is_updatable": True}
     )
     efi_db_version: Mapped[str | None] = mapped_column(
-        info = {"is_parameter": True, "pipeline_key": "job_id"}
+        info = {"is_parameter": True, "pipeline_key": "efi_db"} # is this the correct mapping?
     )
     isExample: Mapped[bool | None]
     parentJob_id: Mapped[int | None]
@@ -90,7 +63,7 @@ class Job(Base):
             completed_string = f"timeStarted='{self.timeStarted}'"
         else:
             completed_string = ""
-        return (f"<self.__class__.__name__(id={self.id},"
+        return (f"<{self.__class__.__name__}(id={self.id},"
                 + f" status='{self.status}',"
                 + f" job_type='{self.job_type}',"
                 + f" timeCreated='{self.timeCreated}'"
@@ -119,13 +92,7 @@ class Job(Base):
 class AlignmentScoreParameters:
     alignmentScore: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "filter"}
-    )
-
-class BlastSequenceParameters:
-    blastSequence: Mapped[str | None] = mapped_column(
-        use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "blast_query_file"}
+        info = {"is_parameter": True}
     )
 
 class SequenceLengthParameters:
@@ -301,11 +268,7 @@ class ESTGenerateFastaJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_generate_fasta"
     }
-    inputFasta: Mapped[str | None] = mapped_column(
-        # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True, }
-    )
-    pipeline = "est"
+    pipeline = Pipeline.EST_Fasta
 
 class ESTGenerateFamiliesJob(
         Job,
@@ -319,12 +282,12 @@ class ESTGenerateFamiliesJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_generate_families"
     }
-    pipeline = "est"
+    pipeline = Pipeline.EST_Families
 
 class ESTGenerateBlastJob(
         Job,
         ESTGenerateJob,
-        BlastSequenceParameters,
+        FilenameParameters,
         ExcludeFragmentsParameters,
         FilterByTaxonomyParameters,
         ProteinFamilyAdditionParameters,
@@ -334,7 +297,7 @@ class ESTGenerateBlastJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_generate_blast"
     }
-    pipeline = "est"
+    pipeline = Pipeline.EST_Blast
 
 class ESTGenerateAccessionJob(
         Job,
@@ -354,7 +317,7 @@ class ESTGenerateAccessionJob(
     domainFamily: Mapped[str | None] = mapped_column(
         info = {"is_parameter": True, "pipeline_key": "domain_family"}
     )
-    pipeline = "est"
+    pipeline = Pipeline.EST_Accession
 
 class ESTSSNFinalizationJob(
         Job,
@@ -371,14 +334,14 @@ class ESTSSNFinalizationJob(
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = "generatessn"
+    pipeline = Pipeline.GenerateSSN
 
 class ESTNeighborhoodConnectivityJob(Job, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_neighborhood_connectivity"
     }
-    pipeline = "neighborhoodconnectivity"
+    pipeline = Pipeline.NeighborhoodConn
 
 class ESTConvergenceRatioJob(
         Job,
@@ -389,7 +352,7 @@ class ESTConvergenceRatioJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_convergence_ratio"
     }
-    pipeline = "convergenceratio"
+    pipeline = Pipeline.ConvergenceRatio
 
 class ESTClusterAnalysisJob(Job, FilenameParameters):
     __mapper_args__ = {
@@ -406,14 +369,14 @@ class ESTClusterAnalysisJob(Job, FilenameParameters):
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = "clusteranalysis"
+    pipeline = Pipeline.ClusterAnalysis
 
 class ESTColorSSNJob(Job, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_color_ssn"
     }
-    pipeline = "colorssn"
+    pipeline = Pipeline.ColorSSN
 
 class GNTGNNJob(Job, GNTDiagramJob, FilenameParameters):
     __mapper_args__ = {
@@ -428,27 +391,27 @@ class GNTGNNJob(Job, GNTDiagramJob, FilenameParameters):
         use_existing_column=True,
         info = {"is_parameter": True, "pipeline_key": "nb_size"}
     )
-    pipeline = "gnt"
+    pipeline = Pipeline.GNT
 
 class GNTDiagramBlastJob(
         Job,
         GNTDiagramJob,
-        BlastSequenceParameters,
         ExcludeFragmentsParameters,
+        FilenameParameters,
         SequenceDatabaseParameters,
     ):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_diagram_blast"
     }
-    pipeline = "gnd"
+    pipeline = Pipeline.GND_Blast
 
 class GNTDiagramFastaJob(Job, GNTDiagramJob, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_diagram_fasta"
     }
-    pipeline = "gnd"
+    pipeline = Pipeline.GND_Fasta
 
 class GNTDiagramSequenceIdJob(
         Job,
@@ -461,14 +424,14 @@ class GNTDiagramSequenceIdJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_diagram_sequence_id"
     }
-    pipeline = "gnd"
+    pipeline = Pipeline.GND_Accession
 
 class GNTViewDiagramJob(Job, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_view_diagram"
     }
-    pipeline = "gnd"
+    pipeline = Pipeline.GND_View
 
 class CGFPIdentifyJob(
         Job,
@@ -488,7 +451,7 @@ class CGFPIdentifyJob(
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = "cgfp"
+    pipeline = Pipeline.CGFP_Ident
 
 class CGFPQuantifyJob(Job,SearchParameters):
     __mapper_args__ = {
@@ -499,7 +462,7 @@ class CGFPQuantifyJob(Job,SearchParameters):
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = "cgfp"
+    pipeline = Pipeline.CGFP_Quant
 
 class TaxonomyAccessionJob(
         Job,
@@ -513,7 +476,7 @@ class TaxonomyAccessionJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "taxonomy_accession"
     }
-    pipeline = "taxonomy"
+    pipeline = Pipeline.Taxon_Accession
 
 class TaxonomyFamiliesJob(
         Job,
@@ -526,7 +489,7 @@ class TaxonomyFamiliesJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "taxonomy_families"
     }
-    pipeline = "taxonomy"
+    pipeline = Pipeline.Taxon_Families
 
 class TaxonomyFastaJob(
         Job,
@@ -539,4 +502,5 @@ class TaxonomyFastaJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "taxonomy_fasta"
     }
-    pipeline = "taxonomy"
+    pipeline = Pipeline.Taxon_Fasta
+

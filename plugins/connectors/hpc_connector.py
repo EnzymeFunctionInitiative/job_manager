@@ -79,10 +79,11 @@ class Connector(BaseConnector):
         """Submits the job to the remote scheduler."""
         remote_job_path = os.path.dirname(cluster_params_path)
         
+        nextflow_pipeline = settings.REMOTE_NEXTFLOW_PIPELINE_DIR + f"/{nf_pipeline[0]}/{nf_pipeline[0]}.nf"
         nextflow_command = (
             f"cd {remote_job_path} && "
-            f"{settings.REMOTE_NEXTFLOW_PATH} run {settings.REMOTE_NEXTFLOW_PIPELINE} "
-            f"-params-file {cluster_params_path}"
+            f"{settings.REMOTE_NEXTFLOW_PATH} -C {settings.REMOTE_NEXTFLOW_CONFIG_PATH} run {nextflow_pipeline} "
+            f"-params-file {cluster_params_path} -w {job_path}/work"
         )
         
         sbatch_command = f"sbatch --job-name=job_{job_id} --output=job_{job_id}.out --wrap='{nextflow_command}'"

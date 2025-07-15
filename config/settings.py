@@ -31,8 +31,10 @@ REMOTE_JOB_DIRECTORY = "/data/jobs"
 # --- Cluster Configuration (Used by both connectors) ---
 # The path to the Nextflow executable on the cluster
 REMOTE_NEXTFLOW_PATH = "/path/to/nextflow"
-# The Nextflow pipeline script to run
-REMOTE_NEXTFLOW_PIPELINE = "/path/to/your/pipeline.nf"
+# The path to the Nextflow configuration file
+REMOTE_NEXTFLOW_CONFIG_PATH = "/path/to/nextflow/config"
+# The path to the directory that houses Nextflow pipeline scripts
+REMOTE_NEXTFLOW_PIPELINE_DIR = "/path/to/your/EST/pipeline/dir"
 
 
 # --- Email Configuration ---
@@ -42,3 +44,17 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "your-email@example.com"
 EMAIL_HOST_PASSWORD = "your-email-password"
 EMAIL_SENDER = "noreply@example.com"
+
+
+# --- Hard-coded Input Parameters for Nextflow Pipelines -- 
+NEXTFLOW_PARAMS = {
+    "efi_config": "/path/to/efi.config",   # this is the path to the config file for EFI DB access
+    "efi_db": "efi_202503", # name of the database to be used in the EFI tools
+    # only relevant to EST but no harm in overloading the dict
+    "duckdb_memory_limit": "8GB",
+    "duckdb_threads": 1,
+    "fasta_shards": 128,
+    "accession_shards": 16,
+}
+
+

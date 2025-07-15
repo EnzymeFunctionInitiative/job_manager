@@ -2,29 +2,23 @@
 
 import os
 from datetime import datetime
-from app.models import Job, Status
-from plugins.notification import send_email
+from app.job_enums import Status, Pipeline
+from app.models import Job, FilenameParameters
+#from plugins.notification import send_email
 from config import settings
-from app.plugin_loader import load_connector_class
-
-# Load the connector class dynamically when the application starts.
-# The rest of the code doesn't need to know which connector it is.
-ConnectorClass = load_connector_class()
 
 class JobHandler:
-    def __init__(self, db_session):
+    def __init__(self, db_session, connector_instance):
         self.db = db_session
-        # Instantiate the dynamically loaded connector class
-        self.connector = ConnectorClass()
+        self.connector = connector_instance
 
     def process_new_job(self, job: Job):
         """Handles the submission of a new job by delegating to the connector."""
         print(f"Processing NEW job: {job.id} using {job.id, self.connector.__class__.__name__}")
         
         # 1. Get job parameters and input file path
-        params = job.get_parameters_dict()
         input_file = None
-        if hasattr(job, 'jobFilename') and job.jobFilename:
+        if isinstance(job, FilenameParameters) and job.jobFilename:
             file_path = os.path.join(settings.LOCAL_INPUT_FILE_SOURCE_DIR, job.jobFilename)
             if os.path.exists(file_path):
                 input_file = file_path
@@ -35,6 +29,8 @@ class JobHandler:
                 return
 
         # 2. Prepare the job environment using the connector
+        params = job.get_parameters_dict()
+        params.update(settings.NEXTFLOW_PARAMS)
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:
             print(f"Failed to prepare job environment for job {job.id}")
@@ -87,3 +83,4 @@ class JobHandler:
             print(f"Job {job.id} has an unknown status: {status}")
 
         self.db.commit()
+
