@@ -32,7 +32,7 @@ REMOTE_JOB_DIRECTORY = "/data/jobs"
 # The path to the Nextflow executable on the cluster
 REMOTE_NEXTFLOW_PATH = "/path/to/nextflow"
 # The path to the Nextflow configuration file
-REMOTE_NEXTFLOW_CONFIG_Path = "/path/to/nextflow/config"
+REMOTE_NEXTFLOW_CONFIG_PATH = "/path/to/nextflow/config"
 # The path to the directory that houses Nextflow pipeline scripts
 REMOTE_NEXTFLOW_PIPELINE = "/path/to/your/EST/pipeline/dir"
 
@@ -47,7 +47,7 @@ EMAIL_SENDER = "noreply@example.com"
 
 
 # --- Hard-coded Input Parameters for Nextflow Pipelines -- 
-PARAMS_DICT = {
+NEXTFLOW_PARAMS = {
     "efi_config": "/path/to/efi.config",   # this is the path to the config file for EFI DB access
     "efi_db": "efi_202503", # name of the database to be used in the EFI tools
     # only relevant to EST but no harm in overloading the dict

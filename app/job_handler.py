@@ -30,7 +30,7 @@ class JobHandler:
 
         # 2. Prepare the job environment using the connector
         params = job.get_parameters_dict()
-        params.update(settings.PARAMS_DICT)
+        params.update(settings.NEXTFLOW_PARAMS)
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:
             print(f"Failed to prepare job environment for job {job.id}")
