@@ -33,7 +33,6 @@ class JobHandler:
         params.update(settings.NEXTFLOW_PARAMS)
         if hasattr(job, "import_mode"):
             params.update({"import_mode": str(job.import_mode)})
-        # add est import mode; test Pipeline membership and grab pipeline list
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:
             print(f"Failed to prepare job environment for job {job.id}")
