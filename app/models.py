@@ -95,13 +95,6 @@ class AlignmentScoreParameters:
         info = {"is_parameter": True}
     )
 
-class BlastSequenceParameters:
-    blastSequence: Mapped[str | None] = mapped_column(
-        use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "blast_query_file"}
-    )
-    # NOTE: is blastSequence really gonna be string for a protein sequence? or a file path that points to a fasta file that contains the sequence? the nextflow pipeline expects a file path...
-
 class SequenceLengthParameters:
     minLength: Mapped[int | None] = mapped_column(
         use_existing_column=True,
@@ -403,7 +396,6 @@ class GNTGNNJob(Job, GNTDiagramJob, FilenameParameters):
 class GNTDiagramBlastJob(
         Job,
         GNTDiagramJob,
-        BlastSequenceParameters,    # remove this mixin class?
         ExcludeFragmentsParameters,
         FilenameParameters,
         SequenceDatabaseParameters,
