@@ -41,7 +41,7 @@ class Job(Base):
         info = {"is_updatable": True}
     )
     efi_db_version: Mapped[str | None] = mapped_column(
-        info = {"is_parameter": True, "pipeline_key": "job_id"}
+        info = {"is_parameter": True, "pipeline_key": "efi_db"} # is this the correct mapping?
     )
     isExample: Mapped[bool | None]
     parentJob_id: Mapped[int | None]
@@ -63,7 +63,7 @@ class Job(Base):
             completed_string = f"timeStarted='{self.timeStarted}'"
         else:
             completed_string = ""
-        return (f"<self.__class__.__name__(id={self.id},"
+        return (f"<{self.__class__.__name__}(id={self.id},"
                 + f" status='{self.status}',"
                 + f" job_type='{self.job_type}',"
                 + f" timeCreated='{self.timeCreated}'"
@@ -92,7 +92,7 @@ class Job(Base):
 class AlignmentScoreParameters:
     alignmentScore: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "filter"}
+        info = {"is_parameter": True}
     )
 
 class BlastSequenceParameters:
@@ -100,6 +100,7 @@ class BlastSequenceParameters:
         use_existing_column=True,
         info = {"is_parameter": True, "pipeline_key": "blast_query_file"}
     )
+    # NOTE: is blastSequence really gonna be string for a protein sequence? or a file path that points to a fasta file that contains the sequence? the nextflow pipeline expects a file path...
 
 class SequenceLengthParameters:
     minLength: Mapped[int | None] = mapped_column(
@@ -274,10 +275,6 @@ class ESTGenerateFastaJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_generate_fasta"
     }
-    inputFasta: Mapped[str | None] = mapped_column(
-        # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True, }
-    )
     pipeline = Pipeline.EST_Fasta
 
 class ESTGenerateFamiliesJob(
@@ -297,7 +294,7 @@ class ESTGenerateFamiliesJob(
 class ESTGenerateBlastJob(
         Job,
         ESTGenerateJob,
-        BlastSequenceParameters,
+        FilenameParameters,
         ExcludeFragmentsParameters,
         FilterByTaxonomyParameters,
         ProteinFamilyAdditionParameters,
@@ -406,8 +403,9 @@ class GNTGNNJob(Job, GNTDiagramJob, FilenameParameters):
 class GNTDiagramBlastJob(
         Job,
         GNTDiagramJob,
-        BlastSequenceParameters,
+        BlastSequenceParameters,    # remove this mixin class?
         ExcludeFragmentsParameters,
+        FilenameParameters,
         SequenceDatabaseParameters,
     ):
     __mapper_args__ = {
