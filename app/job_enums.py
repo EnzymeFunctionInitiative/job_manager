@@ -1,6 +1,6 @@
 
 from typing import Union
-from enum import Flag, auto
+from enum import Enum, Flag, auto
 
 class Status(Flag):
     """ Setting accessible status states """
@@ -35,41 +35,35 @@ class Status(Flag):
                 + f" Flag.\n{e}")
             raise
 
-class Pipeline(Flag):
+class Pipeline(Enum):
     """ Setting the Job types """
-    EST_Blast = auto()
-    EST_Families = auto()
-    EST_Fasta = auto()
-    EST_Accession = auto()
-    GenerateSSN = auto()
-    ColorSSN = auto()
+    EST = auto()
+    GENERATESSN = auto()
+    COLORSSN = auto()
     GNT = auto()
-    GND_Blast = auto()
-    GND_Fasta = auto()
-    GND_Accession = auto()
-    GND_View = auto()
-    # these names are assuming that the nextflow pipelines are cgfp.nf and taxon.nf, etc
-    NeighborhoodConn = auto()
-    ConvergenceRatio = auto()
-    ClusterAnalysis = auto()
-    CGFP_Ident = auto()
-    CGFP_Quant = auto()
-    Taxon_Families = auto()
-    Taxon_Fasta = auto()
-    Taxon_Accession = auto()
-
-    EST = EST_Blast | EST_Families | EST_Fasta | EST_Accession
-    GND = GND_Blast | GND_Fasta | GND_Accession | GND_View
-    CGFP = CGFP_Ident | CGFP_Quant
-    Taxonomy = Taxon_Families | Taxon_Fasta | Taxon_Accession
+    GND = auto()
+    # these names are assuming that the nextflow pipelines are cgfp.nf and 
+    # taxon.nf, etc
+    NEIGHBORHOODCONN = auto()
+    CONVERGENCERATIO = auto()
+    CLUSTERANALYSIS = auto()
+    CGFP = auto()
+    TAXON = auto()
 
     def __str__(self):
         return self.name.lower()
 
-    def get_pipeline_info(self):
-        """
-        Get a list containing the over-arching pipeline name and the import 
-        method, if applicable.
-        """
-        return self.__str__().split("_")
+
+class ImportMode(Enum):
+    """ Setting the import mode types """
+    ACCESSION = auto()
+    BLAST = auto()
+    FAMILIES = auto()
+    FASTA = auto()
+    VIEW = auto()
+    IDENTIFY = auto()
+    QUANTIFY = auto()
+
+    def __str__(self):
+        return self.name.lower()
 
