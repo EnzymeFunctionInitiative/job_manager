@@ -2,8 +2,9 @@
 
 import os
 from datetime import datetime
-from app.models import Job, Status
-from plugins.notification import send_email
+from app.job_enums import Status, Pipeline
+from app.models import Job
+#from plugins.notification import send_email
 from config import settings
 
 class JobHandler:
@@ -18,15 +19,19 @@ class JobHandler:
         # 1. Get job parameters and input file path
         input_file = None
         # NOTE: this boolean test will throw errors if the job object doesn't have the jobFilename attribute
-        if hasattr(job, 'jobFilename') and job.jobFilename:
-            file_path = os.path.join(settings.LOCAL_INPUT_FILE_SOURCE_DIR, job.jobFilename)
-            if os.path.exists(file_path):
-                input_file = file_path
-            else:
-                print(f"Input file not found for job {job.id}: {file_path}")
-                job.status = Status.FAILED
-                self.db.commit()
-                return
+        if hasattr(job, 'jobFilename'):
+            if job.jobFilename:
+                # is this really how input files from the website are to be stored? 
+                file_path = os.path.join(settings.LOCAL_INPUT_FILE_SOURCE_DIR, job.jobFilename)
+                if os.path.exists(file_path):
+                    input_file = file_path
+                else:
+                    print(f"Input file not found for job {job.id}: {file_path}")
+                    job.status = Status.FAILED
+                    self.db.commit()
+                    return
+            # I'm assuming symfony will prevent the submission of a form with an empty file upload field (when one is needed)
+            # so no need to job.status = Status.Failed
 
         # 2. Prepare the job environment using the connector
         params = job.get_parameters_dict()
