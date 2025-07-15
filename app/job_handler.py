@@ -3,7 +3,7 @@
 import os
 from datetime import datetime
 from app.job_enums import Status, Pipeline
-from app.models import Job
+from app.models import Job, FilenameParameters
 #from plugins.notification import send_email
 from config import settings
 
@@ -18,16 +18,15 @@ class JobHandler:
         
         # 1. Get job parameters and input file path
         input_file = None
-        if hasattr(job, 'jobFilename'):
-            if job.jobFilename:
-                file_path = os.path.join(settings.LOCAL_INPUT_FILE_SOURCE_DIR, job.jobFilename)
-                if os.path.exists(file_path):
-                    input_file = file_path
-                else:
-                    print(f"Input file not found for job {job.id}: {file_path}")
-                    job.status = Status.FAILED
-                    self.db.commit()
-                    return
+        if isinstance(job, FilenameParameters) and job.jobFilename:
+            file_path = os.path.join(settings.LOCAL_INPUT_FILE_SOURCE_DIR, job.jobFilename)
+            if os.path.exists(file_path):
+                input_file = file_path
+            else:
+                print(f"Input file not found for job {job.id}: {file_path}")
+                job.status = Status.FAILED
+                self.db.commit()
+                return
 
         # 2. Prepare the job environment using the connector
         params = job.get_parameters_dict()
