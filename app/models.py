@@ -6,7 +6,7 @@ import sqlalchemy
 from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
-from app.job_enums import Status, Pipeline
+from app.job_enums import Status, Pipeline, ImportMode
 from app.flag_enum_type import FlagEnumType
 
 class Base(DeclarativeBase):
@@ -268,7 +268,8 @@ class ESTGenerateFastaJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_generate_fasta"
     }
-    pipeline = Pipeline.EST_Fasta
+    pipeline = Pipeline.EST
+    import_mode = ImportMode.FASTA
 
 class ESTGenerateFamiliesJob(
         Job,
@@ -282,7 +283,8 @@ class ESTGenerateFamiliesJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_generate_families"
     }
-    pipeline = Pipeline.EST_Families
+    pipeline = Pipeline.EST
+    import_mode = ImportMode.FAMILIES
 
 class ESTGenerateBlastJob(
         Job,
@@ -297,7 +299,8 @@ class ESTGenerateBlastJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_generate_blast"
     }
-    pipeline = Pipeline.EST_Blast
+    pipeline = Pipeline.EST
+    import_mode = ImportMode.BLAST
 
 class ESTGenerateAccessionJob(
         Job,
@@ -317,7 +320,8 @@ class ESTGenerateAccessionJob(
     domainFamily: Mapped[str | None] = mapped_column(
         info = {"is_parameter": True, "pipeline_key": "domain_family"}
     )
-    pipeline = Pipeline.EST_Accession
+    pipeline = Pipeline.EST
+    import_mode = ImportMode.ACCESSION
 
 class ESTSSNFinalizationJob(
         Job,
@@ -334,14 +338,14 @@ class ESTSSNFinalizationJob(
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = Pipeline.GenerateSSN
+    pipeline = Pipeline.GENERATESSN
 
 class ESTNeighborhoodConnectivityJob(Job, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_neighborhood_connectivity"
     }
-    pipeline = Pipeline.NeighborhoodConn
+    pipeline = Pipeline.NEIGHBORHOODCONN
 
 class ESTConvergenceRatioJob(
         Job,
@@ -352,7 +356,7 @@ class ESTConvergenceRatioJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_convergence_ratio"
     }
-    pipeline = Pipeline.ConvergenceRatio
+    pipeline = Pipeline.CONVERGENCERATIO
 
 class ESTClusterAnalysisJob(Job, FilenameParameters):
     __mapper_args__ = {
@@ -369,14 +373,14 @@ class ESTClusterAnalysisJob(Job, FilenameParameters):
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = Pipeline.ClusterAnalysis
+    pipeline = Pipeline.CLUSTERANALYSIS
 
 class ESTColorSSNJob(Job, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "est_color_ssn"
     }
-    pipeline = Pipeline.ColorSSN
+    pipeline = Pipeline.COLORSSN
 
 class GNTGNNJob(Job, GNTDiagramJob, FilenameParameters):
     __mapper_args__ = {
@@ -404,14 +408,16 @@ class GNTDiagramBlastJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_diagram_blast"
     }
-    pipeline = Pipeline.GND_Blast
+    pipeline = Pipeline.GND
+    import_mode = ImportMode.BLAST
 
 class GNTDiagramFastaJob(Job, GNTDiagramJob, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_diagram_fasta"
     }
-    pipeline = Pipeline.GND_Fasta
+    pipeline = Pipeline.GND
+    import_mode = ImportMode.FASTA
 
 class GNTDiagramSequenceIdJob(
         Job,
@@ -424,14 +430,16 @@ class GNTDiagramSequenceIdJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_diagram_sequence_id"
     }
-    pipeline = Pipeline.GND_Accession
+    pipeline = Pipeline.GND
+    import_mode = ImportMode.ACCESSION
 
 class GNTViewDiagramJob(Job, FilenameParameters):
     __mapper_args__ = {
         "polymorphic_load": "selectin",
         "polymorphic_identity": "gnt_view_diagram"
     }
-    pipeline = Pipeline.GND_View
+    pipeline = Pipeline.GND
+    import_mode = ImportMode.VIEW
 
 class CGFPIdentifyJob(
         Job,
@@ -451,7 +459,8 @@ class CGFPIdentifyJob(
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = Pipeline.CGFP_Ident
+    pipeline = Pipeline.CGFP
+    import_mode = ImportMode.IDENTIFY
 
 class CGFPQuantifyJob(Job,SearchParameters):
     __mapper_args__ = {
@@ -462,7 +471,8 @@ class CGFPQuantifyJob(Job,SearchParameters):
         # NOTE: does this map to a params in the nextflow pipeline(s)
         info = {"is_parameter": True}
     )
-    pipeline = Pipeline.CGFP_Quant
+    pipeline = Pipeline.CGFP
+    import_mode = ImportMode.QUANTIFY
 
 class TaxonomyAccessionJob(
         Job,
@@ -476,7 +486,8 @@ class TaxonomyAccessionJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "taxonomy_accession"
     }
-    pipeline = Pipeline.Taxon_Accession
+    pipeline = Pipeline.TAXON
+    import_mode = ImportMode.ACCESSION
 
 class TaxonomyFamiliesJob(
         Job,
@@ -489,7 +500,8 @@ class TaxonomyFamiliesJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "taxonomy_families"
     }
-    pipeline = Pipeline.Taxon_Families
+    pipeline = Pipeline.TAXON
+    import_mode = ImportMode.FAMILIES
 
 class TaxonomyFastaJob(
         Job,
@@ -502,5 +514,6 @@ class TaxonomyFastaJob(
         "polymorphic_load": "selectin",
         "polymorphic_identity": "taxonomy_fasta"
     }
-    pipeline = Pipeline.Taxon_Fasta
+    pipeline = Pipeline.TAXON
+    import_mode = ImportMode.FASTA
 

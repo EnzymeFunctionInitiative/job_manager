@@ -4,7 +4,7 @@ import os
 import json
 import shutil
 import subprocess
-from typing import Dict, Any, Optional
+from typing import Dict, List, Any, Optional
 from config import settings
 from plugins.base_connector import BaseConnector
 
@@ -68,7 +68,10 @@ class Connector(BaseConnector):
             f"{settings.REMOTE_NEXTFLOW_PATH} -C {config_path} run {nextflow_pipeline_path} "
             f"-params-file {cluster_params_path} -w {job_path}/work"
         )
-        sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition={settings.PARTITION} --output=job_{job_id}.out --wrap='{nextflow_command}'"
+
+        sbatch_command = f"echo sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition=efi --output=job_{job_id}.out --wrap='{nextflow_command}' Submitted batch job {job_id}"
+        print(sbatch_command)
+        #sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition=efi --output=job_{job_id}.out --wrap='{nextflow_command}'"
         stdout, _ = self._execute_local_command(sbatch_command, working_dir=job_path)
         
         if stdout and "Submitted batch job" in stdout:
@@ -80,7 +83,9 @@ class Connector(BaseConnector):
 
     def get_job_status(self, scheduler_job_id: int) -> str:
         """Checks job status using local sacct."""
-        command = f"sacct -j {scheduler_job_id} --format=State --noheader"
+        command = f"echo sacct -j {scheduler_job_id} --format=State --noheader COMPLETED"
+        print(command)
+        #command = f"sacct -j {scheduler_job_id} --format=State --noheader"
         stdout, _ = self._execute_local_command(command)
         if stdout:
             status = stdout.splitlines()[0].strip()

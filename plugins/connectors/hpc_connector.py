@@ -75,18 +75,19 @@ class Connector(BaseConnector):
                 print(f"Failed to prepare remote job environment for job {job_id}: {e}")
                 return None
 
-    def submit_job(self, job_id: int, cluster_params_path: str) -> Optional[int]:
+    def submit_job(self, job_id: int, cluster_params_path: str, nf_pipeline: str) -> Optional[int]:
         """Submits the job to the remote scheduler."""
         remote_job_path = os.path.dirname(cluster_params_path)
         
-        nextflow_pipeline = settings.REMOTE_NEXTFLOW_PIPELINE_DIR + f"/{nf_pipeline[0]}/{nf_pipeline[0]}.nf"
+        nextflow_pipeline_path = settings.REMOTE_NEXTFLOW_PIPELINE_DIR + f"/{nf_pipeline}/{nf_pipeline}.nf"
+        config_path = settings.REMOTE_NEXTFLOW_CONFIG_PATH + f"/{nf_pipeline}/slurm.config"
         nextflow_command = (
             f"cd {remote_job_path} && "
-            f"{settings.REMOTE_NEXTFLOW_PATH} -C {settings.REMOTE_NEXTFLOW_CONFIG_PATH} run {nextflow_pipeline} "
+            f"{settings.REMOTE_NEXTFLOW_PATH} -C {config_path} run {nextflow_pipeline_path} "
             f"-params-file {cluster_params_path} -w {job_path}/work"
         )
         
-        sbatch_command = f"sbatch --job-name=job_{job_id} --output=job_{job_id}.out --wrap='{nextflow_command}'"
+        sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition={settings.PARTITION} --output=job_{job_id}.out --wrap='{nextflow_command}'"
         stdout, _ = self._execute_remote_command(sbatch_command)
         
         if stdout and "Submitted batch job" in stdout:
