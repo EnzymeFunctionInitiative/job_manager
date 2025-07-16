@@ -14,7 +14,8 @@ class JobHandler:
 
     def process_new_job(self, job: Job):
         """Handles the submission of a new job by delegating to the connector."""
-        print(f"Processing NEW job: {job.id} using {job.id, self.connector.__class__.__name__}")
+        pipeline = str(job.pipeline)
+        print(f"Processing NEW job: {job.id} is a {pipeline} job")
         
         # 1. Get job parameters and input file path
         input_file = None
@@ -33,6 +34,7 @@ class JobHandler:
         params.update(settings.NEXTFLOW_PARAMS)
         if hasattr(job, "import_mode"):
             params.update({"import_mode": str(job.import_mode)})
+        
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:
             print(f"Failed to prepare job environment for job {job.id}")
@@ -41,7 +43,6 @@ class JobHandler:
             return
 
         # 3. Submit the job using the connector
-        pipeline = str(job.pipeline)
         scheduler_job_id = self.connector.submit_job(job.id, cluster_params_path, pipeline)
 
         if scheduler_job_id:
