@@ -24,8 +24,11 @@ HPC_HOSTNAME = "your-hpc-hostname"
 HPC_USERNAME = "your-username"
 # It is recommended to use SSH keys for passwordless authentication.
 HPC_SSH_KEY_PATH = "/path/to/your/ssh/private/key"
+
 # The base directory on the remote HPC where jobs will be created
 REMOTE_JOB_DIRECTORY = "/data/jobs"
+# The partition name jobs will be submitted to.
+PARTITION = "queue_name"
 
 
 # --- Cluster Configuration (Used by both connectors) ---
