@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from app.job_enums import Status, Pipeline
+from app.job_enums import Status, Pipeline, ImportMode
 from app.models import Job, FilenameParameters
 #from plugins.notification import send_email
 from config import settings
@@ -31,6 +31,8 @@ class JobHandler:
         # 2. Prepare the job environment using the connector
         params = job.get_parameters_dict()
         params.update(settings.NEXTFLOW_PARAMS)
+        if hasattr(job, "import_mode"):
+            params.update({"import_mode": str(job.import_mode)})
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:
             print(f"Failed to prepare job environment for job {job.id}")
@@ -39,7 +41,8 @@ class JobHandler:
             return
 
         # 3. Submit the job using the connector
-        scheduler_job_id = self.connector.submit_job(job.id, cluster_params_path)
+        pipeline = str(job.pipeline)
+        scheduler_job_id = self.connector.submit_job(job.id, cluster_params_path, pipeline)
 
         if scheduler_job_id:
             job.status = Status.RUNNING

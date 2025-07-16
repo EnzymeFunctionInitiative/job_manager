@@ -27,7 +27,12 @@ class Connector(BaseConnector):
             print(f"Error executing local command: {command}\nStderr: {e.stderr}")
             return None, e.stderr
 
-    def prepare_job_environment(self, job_id: int, params_dict: Dict[str, Any], input_file_local_path: Optional[str]) -> Optional[str]:
+    def prepare_job_environment(
+            self,
+            job_id: int,
+            params_dict: Dict[str, Any],
+            input_file_local_path: Optional[str]
+        ) -> Optional[str]:
         """Prepares the job environment on the shared filesystem."""
         try:
             job_dir = os.path.join(self.job_base_dir, str(job_id))
@@ -52,18 +57,19 @@ class Connector(BaseConnector):
             self,
             job_id: int,
             cluster_params_path: str,
-            nf_pipeline: List[str, ...]
+            nf_pipeline: str
         ) -> Optional[int]:
         """Submits the job to the local scheduler (e.g., Slurm)."""
         job_path = os.path.dirname(cluster_params_path)
         
-        nextflow_pipeline = settings.REMOTE_NEXTFLOW_PIPELINE_DIR + f"/{nf_pipeline[0]}/{nf_pipeline[0]}.nf"
+        nextflow_pipeline_path = settings.REMOTE_NEXTFLOW_PIPELINE_DIR + f"/{nf_pipeline}/{nf_pipeline}.nf"
         nextflow_command = (
-            f"{settings.REMOTE_NEXTFLOW_PATH} -C {settings.REMOTE_NEXTFLOW_CONFIG_PATH} run {nextflow_pipeline} "
+            f"{settings.REMOTE_NEXTFLOW_PATH} -C {settings.REMOTE_NEXTFLOW_CONFIG_PATH} run {nextflow_pipeline_path} "
             f"-params-file {cluster_params_path} -w {job_path}/work"
         )
 
-        sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition=efi --output=job_{job_id}.out --wrap='{nextflow_command}'"
+        sbatch_command = f"echo sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition=efi --output=job_{job_id}.out --wrap='{nextflow_command}'"
+        #sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition=efi --output=job_{job_id}.out --wrap='{nextflow_command}'"
         stdout, _ = self._execute_local_command(sbatch_command, working_dir=job_path)
         
         if stdout and "Submitted batch job" in stdout:
@@ -76,6 +82,7 @@ class Connector(BaseConnector):
     def get_job_status(self, scheduler_job_id: int) -> str:
         """Checks job status using local sacct."""
         command = f"sacct -j {scheduler_job_id} --format=State --noheader"
+        #command = f"sacct -j {scheduler_job_id} --format=State --noheader"
         stdout, _ = self._execute_local_command(command)
         if stdout:
             status = stdout.splitlines()[0].strip()
