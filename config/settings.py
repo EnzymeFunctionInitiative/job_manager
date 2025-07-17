@@ -53,11 +53,16 @@ EMAIL_SENDER = "noreply@example.com"
 NEXTFLOW_PARAMS = {
     "efi_config": "/path/to/efi.config",   # this is the path to the config file for EFI DB access
     "efi_db": "efi_202503", # name of the database to be used in the EFI tools
+    "fasta_db": "/path/to/fasta/database/combined.fasta",   # change this depending on which fasta database is to be used
     # only relevant to EST but no harm in overloading the dict
     "duckdb_memory_limit": "8GB",
     "duckdb_threads": 1,
-    "fasta_shards": 128,
-    "accession_shards": 16,
+    "num_fasta_shards": 128,
+    "num_accession_shards": 16,
+    "blast_num_matches": 250,   # hardcoded for now but should be made a vaue in the job table
+    "multiplex": False,
+    "filter": None,     # hardcode this value here but implement code that updates if any filter parameters are included in the job table
+    "sequence_version": "uniprot",
 }
 
 

@@ -32,9 +32,10 @@ class JobHandler:
         # 2. Prepare the job environment using the connector
         params = job.get_parameters_dict()
         params.update(settings.NEXTFLOW_PARAMS)
+        params.update({"final_output_dir": settings.REMOTE_JOB_DIRECTORY + f"/{job_id}"})
         if hasattr(job, "import_mode"):
             params.update({"import_mode": str(job.import_mode)})
-        
+
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:
             print(f"Failed to prepare job environment for job {job.id}")
