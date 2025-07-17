@@ -6,8 +6,15 @@ import sqlalchemy
 from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
-from app.job_enums import Status, Pipeline, ImportMode
+from app.job_enums import Status, JobType, Pipeline, ImportMode, InfoKeys
 from app.flag_enum_type import FlagEnumType
+
+def create_mapper_args(identity: JobType) -> Dict[str, Any]:
+    """ """
+    return {
+        "polymorphic_load": "selectin",
+        "polymorphic_identity": identity.value
+    }
 
 class Base(DeclarativeBase):
     pass
@@ -20,40 +27,44 @@ class Job(Base):
     
     id: Mapped[int] = mapped_column(
         primary_key=True,
-        info = {"is_parameter": True, "pipeline_key": "job_id"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "job_id"}
     )
     uuid: Mapped[str] = mapped_column(nullable=False)
     status: Mapped[Status] = mapped_column(
         FlagEnumType(Status),
         nullable=False,
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
     isPublic: Mapped[bool] = mapped_column(nullable=False)
     job_type: Mapped[str] = mapped_column(nullable=False)
     user_id: Mapped[int | None]
     # This is a placeholder for a User table relationship
-    # user_email: Mapped[str] = mapped_column(nullable=True) 
+    # user_email: Mapped[str] = mapped_column(nullable=True)
     timeCreated: Mapped[datetime | None]
     timeStarted: Mapped[datetime | None] = mapped_column(
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
     timeCompleted: Mapped[datetime | None] = mapped_column(
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
     efi_db_version: Mapped[str | None] = mapped_column(
-        info = {"is_parameter": True, "pipeline_key": "efi_db"} # is this the correct mapping?
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "efi_db"} # is this the correct mapping?
     )
     isExample: Mapped[bool | None]
     parentJob_id: Mapped[int | None]
     schedulerJobId: Mapped[int | None] = mapped_column(
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
-    jobName: Mapped[str | None] = mapped_column(info = {"is_parameter": True})
-    results: Mapped[str | None] = mapped_column(info = {"is_updatable": True})
+    jobName: Mapped[str | None] = mapped_column(
+        info = {InfoKeys.IS_PARAMETER: True}
+    )
+    #results: Mapped[str | None] = mapped_column(
+    #    info = {InfoKeys.IS_UPDATABLE: True}
+    #)
     
     __mapper_args__ = {
         "polymorphic_on": "job_type",
-        "polymorphic_identity": "job",
+        "polymorphic_identity": JobType.JOB,
     }
 
     def __repr__(self):
@@ -70,20 +81,50 @@ class Job(Base):
                 + f" {completed_string})>")
 
     def get_parameters_dict(self) -> Dict[str, Any]:
+        """
+        Return a dictionary of key:value pairs, where the keys are parameter
+        strings used in the EST nextflow pipelines and the values are the
+        columns' values from the Job table.
+
+        This mapping is necessary because naming conventions between symfony
+        and nextflow code bases are different. If a column's info attribute
+        dictionary contains a `InfoKeys.PARAMETER_KEY` that string will be used
+        in the params.json file.
+        """
         mapper = inspect(self.__class__)
         return {
-            column.info.get("pipeline_key",column.name): 
+            column.info.get(InfoKeys.PARAMETER_KEY,column.name):
                 getattr(self, column.name)
             for column in mapper.columns
-            if column.info.get("is_parameter")
+            if column.info.get(InfoKeys.IS_PARAMETER)
         }
     
     def get_updatable_attrs(self) -> List[str]:
+        """
+        Return a list of column attribute names for columns that are "allowed"
+        to be updated. Any column not flagged by `InfoKeys.IS_UPDATABLE` in
+        the associated info dict should not be allowed to have its value
+        overwritten.
+        """
         mapper = inspect(self.__class__)
-        return [ 
+        return [
             column.name for column in mapper.columns
-            if column.info.get("is_updatable")
+            if column.info.get(InfoKeys.IS_UPDATABLE)
         ]
+
+    def get_result_key_mapping(self) -> Dict[str, Any]:
+        """
+        Return a dict of key:value pairs, where the keys are the keys used in
+        output files from the nextflow pipelines (generally in `stats.json`).
+        The values are the attribute names for the associated MappedColumn
+        objects in the Job table.
+        """
+        mapper = inspect(self.__class__)
+        return {
+            column.info.get(InfoKeys.RESULT_KEY, column.name): column.name
+            for column in mapper.columns
+            if column.info.get(InfoKeys.IS_UPDATABLE)
+        }
 
 
 ################################################################################
@@ -92,73 +133,73 @@ class Job(Base):
 class AlignmentScoreParameters:
     alignmentScore: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
 
 class SequenceLengthParameters:
     minLength: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "min_length"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "min_length"}
     )
     maxLength: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "max_length"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "max_length"}
     )
 
 class ProteinFamilyAdditionParameters:
     families: Mapped[str | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     sequence_version: Mapped[str | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     fraction: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     numUnirefClusters: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
 
 class DomainBoundariesParameters:
     domain: Mapped[bool | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     domainRegion: Mapped[str | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
 
 class ExcludeFragmentsParameters:
     excludeFragments: Mapped[bool | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
 
 class FilterByTaxonomyParameters:
     taxSearch: Mapped[str | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     taxSearchName: Mapped[str | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
 
 class FilterByFamiliesParameters:
     filterByFamilies: Mapped[str | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "filter"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "filter"}
     )
 
 class UserUploadedIdsParameters:
@@ -166,91 +207,91 @@ class UserUploadedIdsParameters:
     numMatchedIds: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
     numUnmatchedIds: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
 
 class FilenameParameters:
     uploadedFilename: Mapped[str | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     jobFilename: Mapped[str | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     updatedAt: Mapped[datetime | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True, "is_updatable": True}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.IS_UPDATABLE: True}
     )
 
 class SequenceDatabaseParameters:
     blastEValue: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "import_blast_evalue"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "import_blast_evalue"}
     )
     maxBlastSequences: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
-            "is_parameter": True,
-            "pipeline_key": "import_blast_num_matches"
+            InfoKeys.IS_PARAMETER: True,
+            InfoKeys.PARAMETER_KEY: "import_blast_num_matches"
         }
     )
+    # why is this updatable ???
     sequenceDatabase: Mapped[str | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
 
 class SearchParameters:
     searchType: Mapped[str | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
 
 class ESTGenerateJob:
     allByAllBlastEValue: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "blast_evalue"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "blast_evalue"}
     )
-    # results columns, not important parameters for nextflow pipelines
     numFamilyOverlap: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
     numNonFamily: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
     numUnirefFamilyOverlap: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
     numComputedSequences: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
     numUniqueSequences: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
     numBlastEdges: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_updatable": True}
+        info = {InfoKeys.IS_UPDATABLE: True}
     )
 
 class GNTDiagramJob:
     neighborhoodWindowSize: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "nb_size"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "nb_size"}
     )
 
 ###############################################################################
@@ -264,10 +305,8 @@ class ESTGenerateFastaJob(
         ProteinFamilyAdditionParameters,
         UserUploadedIdsParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "est_generate_fasta"
-    }
+    __mapper_args__ = create_mapper_args(JobType.EST_GENERATE_FASTA)
+    
     pipeline = Pipeline.EST
     import_mode = ImportMode.FASTA
 
@@ -279,10 +318,8 @@ class ESTGenerateFamiliesJob(
         FilterByTaxonomyParameters,
         ProteinFamilyAdditionParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "est_generate_families"
-    }
+    __mapper_args__ = create_mapper_args(JobType.EST_GENERATE_FAMILIES)
+
     pipeline = Pipeline.EST
     import_mode = ImportMode.FAMILIES
 
@@ -295,10 +332,8 @@ class ESTGenerateBlastJob(
         ProteinFamilyAdditionParameters,
         SequenceDatabaseParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "est_generate_blast"
-    }
+    __mapper_args__ = create_mapper_args(JobType.EST_GENERATE_BLAST)
+
     pipeline = Pipeline.EST
     import_mode = ImportMode.BLAST
 
@@ -313,13 +348,11 @@ class ESTGenerateAccessionJob(
         ProteinFamilyAdditionParameters,
         UserUploadedIdsParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "est_generate_accession"
-    }
+    __mapper_args__ = create_mapper_args(JobType.EST_GENERATE_ACCESSION)
     domainFamily: Mapped[str | None] = mapped_column(
-        info = {"is_parameter": True, "pipeline_key": "domain_family"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "domain_family"}
     )
+
     pipeline = Pipeline.EST
     import_mode = ImportMode.ACCESSION
 
@@ -330,21 +363,16 @@ class ESTSSNFinalizationJob(
         FilterByTaxonomyParameters,
         SequenceLengthParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "est_ssn_finalization"
-    }
+    __mapper_args__ = create_mapper_args(JobType.EST_SSN_FINALIZATION)
     computeNeighborhoodConnectivity: Mapped[bool | None] = mapped_column(
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     pipeline = Pipeline.GENERATESSN
 
 class ESTNeighborhoodConnectivityJob(Job, FilenameParameters):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "est_neighborhood_connectivity"
-    }
+    __mapper_args__ = create_mapper_args(JobType.EST_NEIGHBORHOOD_CONNECTIVITY)
+
     pipeline = Pipeline.NEIGHBORHOODCONN
 
 class ESTConvergenceRatioJob(
@@ -352,48 +380,39 @@ class ESTConvergenceRatioJob(
         AlignmentScoreParameters,
         FilenameParameters
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "est_convergence_ratio"
-    }
+    __mapper_args__ = create_mapper_args(JobType.EST_CONVERGENCE_RATIO)
+
     pipeline = Pipeline.CONVERGENCERATIO
 
 class ESTClusterAnalysisJob(Job, FilenameParameters):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "est_cluster_analysis"
-    }
+    __mapper_args__ = create_mapper_args(JobType.EST_CLUSTER_ANALYSIS)
     minSeqMSA: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     maxSeqMSA: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     pipeline = Pipeline.CLUSTERANALYSIS
 
 class ESTColorSSNJob(Job, FilenameParameters):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "est_color_ssn"
-    }
+    __mapper_args__ = create_mapper_args(JobType.EST_COLOR_SSN)
+
     pipeline = Pipeline.COLORSSN
 
 class GNTGNNJob(Job, GNTDiagramJob, FilenameParameters):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "gnt_gnn"
-    }
+    __mapper_args__ = create_mapper_args(JobType.GNT_GNN)
+
     cooccurrence: Mapped[float | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "cooc_threshold"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "cooc_threshold"}
     )
     neighborhood_size: Mapped[int | None] = mapped_column(
         use_existing_column=True,
-        info = {"is_parameter": True, "pipeline_key": "nb_size"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "nb_size"}
     )
     pipeline = Pipeline.GNT
 
@@ -404,18 +423,14 @@ class GNTDiagramBlastJob(
         FilenameParameters,
         SequenceDatabaseParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "gnt_diagram_blast"
-    }
+    __mapper_args__ = create_mapper_args(JobType.GNT_DIAGRAM_BLAST)
+
     pipeline = Pipeline.GND
     import_mode = ImportMode.BLAST
 
 class GNTDiagramFastaJob(Job, GNTDiagramJob, FilenameParameters):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "gnt_diagram_fasta"
-    }
+    __mapper_args__ = create_mapper_args(JobType.GNT_DIAGRAM_FASTA)
+
     pipeline = Pipeline.GND
     import_mode = ImportMode.FASTA
 
@@ -426,18 +441,14 @@ class GNTDiagramSequenceIdJob(
         FilenameParameters,
         SequenceDatabaseParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "gnt_diagram_sequence_id"
-    }
+    __mapper_args__ = create_mapper_args(JobType.GNT_DIAGRAM_SEQUENCE_ID)
+
     pipeline = Pipeline.GND
     import_mode = ImportMode.ACCESSION
 
 class GNTViewDiagramJob(Job, FilenameParameters):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "gnt_view_diagram"
-    }
+    __mapper_args__ = create_mapper_args(JobType.GNT_VIEW_DIAGRAM)
+
     pipeline = Pipeline.GND
     import_mode = ImportMode.VIEW
 
@@ -447,30 +458,28 @@ class CGFPIdentifyJob(
         SearchParameters,
         SequenceLengthParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "cgfp_identify"
-    }
+    __mapper_args__ = create_mapper_args(JobType.CGFP_IDENTIFY)
+
     referenceDatabase: Mapped[str | None] = mapped_column(
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
     cdhitSequenceIdentity: Mapped[int | None] = mapped_column(
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
+
     pipeline = Pipeline.CGFP
     import_mode = ImportMode.IDENTIFY
 
 class CGFPQuantifyJob(Job,SearchParameters):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "cgfp_quantify"
-    }
+    __mapper_args__ = create_mapper_args(JobType.CGFP_QUANTIFY)
+
     metagenomes: Mapped[str | None] = mapped_column(
         # NOTE: does this map to a params in the nextflow pipeline(s)
-        info = {"is_parameter": True}
+        info = {InfoKeys.IS_PARAMETER: True}
     )
+
     pipeline = Pipeline.CGFP
     import_mode = ImportMode.QUANTIFY
 
@@ -482,10 +491,8 @@ class TaxonomyAccessionJob(
         FilenameParameters,
         SequenceDatabaseParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "taxonomy_accession"
-    }
+    __mapper_args__ = create_mapper_args(JobType.TAXONOMY_ACCESSION)
+
     pipeline = Pipeline.TAXON
     import_mode = ImportMode.ACCESSION
 
@@ -496,10 +503,8 @@ class TaxonomyFamiliesJob(
         FilterByTaxonomyParameters,
         SequenceLengthParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "taxonomy_families"
-    }
+    __mapper_args__ = create_mapper_args(JobType.TAXONOMY_FAMILIES)
+
     pipeline = Pipeline.TAXON
     import_mode = ImportMode.FAMILIES
 
@@ -510,10 +515,8 @@ class TaxonomyFastaJob(
         FilterByFamiliesParameters,
         FilterByTaxonomyParameters,
     ):
-    __mapper_args__ = {
-        "polymorphic_load": "selectin",
-        "polymorphic_identity": "taxonomy_fasta"
-    }
+    __mapper_args__ = create_mapper_args(JobType.TAXONOMY_FASTA)
+
     pipeline = Pipeline.TAXON
     import_mode = ImportMode.FASTA
 
