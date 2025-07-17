@@ -62,6 +62,7 @@ NEXTFLOW_PARAMS = {
     "blast_num_matches": 250,   # hardcoded for now but should be made a vaue in the job table
     "multiplex": False,
     "filter": None,     # hardcode this value here but implement code that updates if any filter parameters are included in the job table
+    "sequence_version": "uniprot",
 }
 
 
