@@ -353,10 +353,45 @@ class NeighborhoodSizeParameters:
         info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "nb_size"}
     )
 
-#class GNTDiagramJob:
-#    # empty but that's fine
+class ColorSSNParameters:
+    # RESULTS
+    numSsnClusters: Mapped[int | None] = mapped_column(
+        use_existing_column=True,
+        info = {
+            InfoKeys.IS_UPDATABLE: True,
+            InfoKeys.RESULT_KEY: "num_ssn_clusters"
+        }
+    )
+    numSsnSingletons: Mapped[int | None] = mapped_column(
+        use_existing_column=True,
+        info = {
+            InfoKeys.IS_UPDATABLE: True,
+            InfoKeys.RESULT_KEY: "num_ssn_singletons"
+        }
+    )
+    numSsnMetanodes: Mapped[int | None] = mapped_column(
+        use_existing_column=True,
+        info = {
+            InfoKeys.IS_UPDATABLE: True,
+            InfoKeys.RESULT_KEY: "num_ssn_nodes"
+        }
+    )
+    numSsnAccessionIds: Mapped[int | None] = mapped_column(
+        use_existing_column=True,
+        info = {
+            InfoKeys.IS_UPDATABLE: True,
+            InfoKeys.RESULT_KEY: "num_ssn_accession_ids"
+        }
+    )
+    colorSsnSequenceSoure: Mapped[str | None] = mapped_column(
+        use_existing_column=True,
+        info = {
+            InfoKeys.IS_UPDATABLE: True,
+            InfoKeys.RESULT_KEY: "ssn_sequence_source"
+        }
+    )
 
-# NOTE: ADD class ColorSSNParameters 
+
 
 ###############################################################################
 # polymorphic_identity / discriminator classes
