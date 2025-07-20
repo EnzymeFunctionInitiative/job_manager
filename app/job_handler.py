@@ -1,15 +1,17 @@
 # app/job_handler.py
 
 import os
+from typing import Dict, Any
 from datetime import datetime
+import json
+
 from app.job_enums import Status, Pipeline, ImportMode
 from app.models import Job, FilenameParameters
 #from plugins.notification import send_email
 from config import settings
 
 class JobHandler:
-    def __init__(self, db_session, connector_instance):
-        self.db = db_session
+    def __init__(self, connector_instance):
         self.connector = connector_instance
 
     def process_new_job(self, job: Job):
@@ -25,9 +27,7 @@ class JobHandler:
                 input_file = file_path
             else:
                 print(f"Input file not found for job {job.id}: {file_path}")
-                job.status = Status.FAILED
-                self.db.commit()
-                return
+                return {"status": Status.FAILED}
 
         # 2. Prepare the job environment using the connector
         params = job.get_parameters_dict()
@@ -39,25 +39,24 @@ class JobHandler:
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:
             print(f"Failed to prepare job environment for job {job.id}")
-            job.status = Status.FAILED
-            self.db.commit()
-            return
+            return {"status": Status.FAILED}
 
         # 3. Submit the job using the connector
         scheduler_job_id = self.connector.submit_job(job.id, cluster_params_path, pipeline)
 
+        updates_dict = {}
         if scheduler_job_id:
-            job.status = Status.RUNNING
-            job.schedulerJobId = scheduler_job_id
-            job.timeStarted = datetime.utcnow()
+            updates_dict["status"] = Status.RUNNING
+            updates_dict["schedulerJobId"] = scheduler_job_id
+            updates_dict["timeStarted"] = datetime.utcnow()
             print(f"Job {job.id} started with scheduler ID: {scheduler_job_id}")
             # send_email(user_email, f"Job {job.id} Started", "Your job is now running.")
         else:
-            job.status = Status.FAILED
+            updates_dict["status"] = Status.FAILED
             print(f"Failed to start job {job.id} on cluster.")
             # send_email(user_email, f"Job {job.id} Failed", "Your job failed to start.")
-
-        self.db.commit()
+        
+        return updates_dict
 
     def process_running_job(self, job: Job):
         """Checks the status of a running job."""
@@ -65,27 +64,87 @@ class JobHandler:
         
         status = self.connector.get_job_status(job.schedulerJobId)
 
-        if status == "COMPLETED":
-            print(f"Job {job.id} finished successfully.")
-            job.status = Status.FINISHED
-            job.timeCompleted = datetime.utcnow()
-            
-            # Retrieve results using the connector
-            self.connector.retrieve_job_results(job.id)
-            
-            # send_email(user_email, f"Job {job.id} Finished", "Your job has completed.")
-
-        elif status == "FAILED":
-            print(f"Job {job.id} failed.")
-            job.status = Status.FAILED
-            job.timeCompleted = datetime.utcnow()
-            # send_email(user_email, f"Job {job.id} Failed", "Your job has failed on the cluster.")
-            
-        elif status == "RUNNING":
+        updates_dict = {}
+        if status == "RUNNING":
             print(f"Job {job.id} is still running.")
             
+        elif status == "FAILED":
+            print(f"Job {job.id} failed.")
+            updates_dict["status"] = Status.FAILED
+            # should timeCompleted be a time reported from the scheduler or
+            # just when the job_manager checks for completion?
+            updates_dict["timeCompleted"] = datetime.utcnow()
+            # send_email(user_email, f"Job {job.id} Failed", "Your job has failed on the cluster.")
+            
+        if status == "COMPLETED":
+            print(f"Job {job.id} finished successfully.")
+            updates_dict["status"] = Status.FINISHED
+            # should timeCompleted be a time reported from the scheduler or
+            # just when the job_manager checks for completion?
+            updates_dict["timeCompleted"] = datetime.utcnow()
+            
+            # Retrieve results using the connector
+            self.connector.retrieve_job_results(job)
+            
+            # Parse result file(s)
+            results_dict = self.parse_results(job)
+            updates_dict.update(results_dict)
+
+            # send_email(user_email, f"Job {job.id} Finished", "Your job has completed.")
+
         else: # UNKNOWN or other states
             print(f"Job {job.id} has an unknown status: {status}")
+        
+        return updates_dict
 
-        self.db.commit()
+    def parse_results(self, job: Job) -> Dict[str, Any]:
+        """ 
+        A job has completed but important summary data needs to be pulled from
+        stats.json (and potentially other files) so the associated columns in
+        the Job table can be updated.
+        """
+        local_output_dir = os.path.join(
+            settings.LOCAL_JOB_DIRECTORY, 
+            str(job.id)
+        )
+       
+        # nearly all nextflow pipelines write a stats.json file that contain
+        # the respective result(s); assume the data typing in the json file is
+        # deserrialized correctly. 
+        with open(os.path.join(local_output_dir, "stats.json")) as stats:
+            results_dict = json.load(stats)
+
+        updates_dict= {}
+        # get job-specific column names to be updated
+        result_mappings = job.get_result_key_mapping()
+        # loop over the key:value pairs from the nf-output json file, check 
+        # whether the key maps to a column name in the Job table, and apply
+        # mapping to add the value to the results_dict
+        for key, val in results_dict.items():
+            # get the value associated with key from the mapping dict or get key
+            new_key = result_mappings.get(key, key)
+            updates_dict[new_key] = val
+
+        return updates_dict
+
+    def apply_updates(self, db_conn, job: Job, results_dict: Dict[str,Any]):
+        """
+        Contents in results_dict get pushed to the Job object, followed by a 
+        commit() call on the database connection.
+        """
+        if not results_dict:
+            print("No updates applied to the Job ({job.__repr__})")
+            return
+        
+        # add an air-gap btwn updating the database by checking whether keys in
+        # the results_dict are labeled as updatable in the jOb table.
+        updatable_columns = job.get_updatable_attrs()
+        # loop over the items in results_dict
+        for key, val in results_dict.items():
+            if key not in updatable_columns:
+                continue
+            setattr(job, key, val)
+
+        db_conn.commit()
+
 
