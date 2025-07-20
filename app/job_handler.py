@@ -35,6 +35,15 @@ class JobHandler:
         params.update({"final_output_dir": settings.REMOTE_JOB_DIRECTORY + f"/{job.id}"})
         if hasattr(job, "import_mode"):
             params.update({"import_mode": str(job.import_mode)})
+        # handle parameters associated with filters for ESTGenerate jobs
+        if job.pipeline == Pipeline.EST:
+            filter_list = job.get_filter_parameters()
+            params["filter"] = []
+            for col_name in filter_list:
+                val = params.get(col_name)
+                if val:
+                    params["filter"].append(f"{col_name}={val}")
+                    params.pop(col_name)
 
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:

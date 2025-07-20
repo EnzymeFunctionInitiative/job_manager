@@ -82,7 +82,7 @@ class Job(Base):
     def get_parameters_dict(self) -> Dict[str, Any]:
         """
         Return a dictionary of key:value pairs, where the keys are parameter
-        strings used in the EST nextflow pipelines and the values are the
+        strings used in the nextflow pipelines and the values are the
         columns' values from the Job table.
 
         This mapping is necessary because naming conventions between symfony
@@ -97,7 +97,18 @@ class Job(Base):
             for column in mapper.columns
             if column.info.get(InfoKeys.IS_PARAMETER)
         }
-    
+   
+    def get_filter_parameters(self) -> List[str]:
+        """
+        Return a list of column attribute names for columns that are 
+        associated with filtering sequences out of an input set of sequences.
+        """
+        mapper = inspect(self.__class__)
+        return [
+            column.name for column in mapper.columns
+            if column.info.get(InfoKeys.IS_FILTER)
+        ]
+
     def get_updatable_attrs(self) -> List[str]:
         """
         Return a list of column attribute names for columns that are "allowed"
@@ -241,7 +252,7 @@ class FilterByTaxonomyParameters:
 class FilterByFamiliesParameters:
     filterByFamilies: Mapped[str | None] = mapped_column(
         use_existing_column=True,
-        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "filter"}
+        info = {InfoKeys.IS_PARAMETER: True, InfoKeys.IS_FILTER: True}
     )
     # RESULTS
     numFamilyFiltered = Mapped[int, None] = mapped_column(

@@ -108,4 +108,5 @@ class InfoKeys(str, BaseEnum):
     PARAMETER_KEY = "parameter_key"
     IS_UPDATABLE = "is_updatable"
     RESULT_KEY = "result_key"
+    IS_FILTER = "is_filter"
 
