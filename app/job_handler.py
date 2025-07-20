@@ -32,7 +32,7 @@ class JobHandler:
         # 2. Prepare the job environment using the connector
         params = job.get_parameters_dict()
         params.update(settings.NEXTFLOW_PARAMS)
-        params.update({"final_output_dir": settings.REMOTE_JOB_DIRECTORY + f"/{job_id}"})
+        params.update({"final_output_dir": settings.REMOTE_JOB_DIRECTORY + f"/{job.id}"})
         if hasattr(job, "import_mode"):
             params.update({"import_mode": str(job.import_mode)})
 
