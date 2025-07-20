@@ -171,35 +171,35 @@ class ProteinFamilyAdditionParameters:
         info = {InfoKeys.IS_PARAMETER: True, InfoKeys.IS_FILTER: True}
     )
     # RESULTS
-    numFamilyIds = Mapped[int, None] = mapped_column(
+    numFamilyIds = Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
             InfoKeys.RESULT_KEY: "num_family"
         }
     )   # NOTE: this column functions for UniProt, Uniref90, and Uniref50 runs;
-    numFullFamilyIds = Mapped[int, None] = mapped_column(
+    numFullFamilyIds = Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
             InfoKeys.RESULT_KEY: "num_full_family"
         }
     )
-    numFamilyOverlapIds = Mapped[int, None] = mapped_column(
+    numFamilyOverlapIds = Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
             InfoKeys.RESULT_KEY: "num_shared_ids"
         }
     )
-    numFamilyUnirefOverlapIds = Mapped[int, None] = mapped_column(
+    numFamilyUnirefOverlapIds = Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
             InfoKeys.RESULT_KEY: "num_shared_uniref_ids"
         }
     )
-    numFractionFiltered = Mapped[int, None] = mapped_column(
+    numFractionFiltered = Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
@@ -223,7 +223,7 @@ class ExcludeFragmentsParameters:
         info = {InfoKeys.IS_PARAMETER: True, InfoKeys.IS_FILTER: True}
     )
     # RESULTS
-    numFragmentFiltered = Mapped[int, None] = mapped_column(
+    numFragmentFiltered = Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
@@ -241,7 +241,7 @@ class FilterByTaxonomyParameters:
         info = {InfoKeys.IS_PARAMETER: True, InfoKeys.IS_FILTER: True}
     )
     # RESULTS
-    numTaxonomyFiltered = Mapped[int, None] = mapped_column(
+    numTaxonomyFiltered = Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
@@ -255,7 +255,7 @@ class FilterByFamiliesParameters:
         info = {InfoKeys.IS_PARAMETER: True, InfoKeys.IS_FILTER: True}
     )
     # RESULTS
-    numFamilyFiltered = Mapped[int, None] = mapped_column(
+    numFamilyFiltered = Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
