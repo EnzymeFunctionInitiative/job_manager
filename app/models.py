@@ -171,35 +171,35 @@ class ProteinFamilyAdditionParameters:
         info = {InfoKeys.IS_PARAMETER: True, InfoKeys.IS_FILTER: True}
     )
     # RESULTS
-    numFamilyIds = Mapped[int | None] = mapped_column(
+    numFamilyIds: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
             InfoKeys.RESULT_KEY: "num_family"
         }
     )   # NOTE: this column functions for UniProt, Uniref90, and Uniref50 runs;
-    numFullFamilyIds = Mapped[int | None] = mapped_column(
+    numFullFamilyIds: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
             InfoKeys.RESULT_KEY: "num_full_family"
         }
     )
-    numFamilyOverlapIds = Mapped[int | None] = mapped_column(
+    numFamilyOverlapIds: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
             InfoKeys.RESULT_KEY: "num_shared_ids"
         }
     )
-    numFamilyUnirefOverlapIds = Mapped[int | None] = mapped_column(
+    numFamilyUnirefOverlapIds: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
             InfoKeys.RESULT_KEY: "num_shared_uniref_ids"
         }
     )
-    numFractionFiltered = Mapped[int | None] = mapped_column(
+    numFractionFiltered: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
@@ -223,7 +223,7 @@ class ExcludeFragmentsParameters:
         info = {InfoKeys.IS_PARAMETER: True, InfoKeys.IS_FILTER: True}
     )
     # RESULTS
-    numFragmentFiltered = Mapped[int | None] = mapped_column(
+    numFragmentFiltered: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
@@ -241,7 +241,7 @@ class FilterByTaxonomyParameters:
         info = {InfoKeys.IS_PARAMETER: True, InfoKeys.IS_FILTER: True}
     )
     # RESULTS
-    numTaxonomyFiltered = Mapped[int | None] = mapped_column(
+    numTaxonomyFiltered: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
@@ -255,7 +255,7 @@ class FilterByFamiliesParameters:
         info = {InfoKeys.IS_PARAMETER: True, InfoKeys.IS_FILTER: True}
     )
     # RESULTS
-    numFamilyFiltered = Mapped[int | None] = mapped_column(
+    numFamilyFiltered: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
@@ -269,7 +269,7 @@ class UserUploadedIdsParameters:
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
-            InforKeys.RESULT_KEY: "num_matched"
+            InfoKeys.RESULT_KEY: "num_matched"
         }
     )
     numUnmatchedIds: Mapped[int | None] = mapped_column(
@@ -333,21 +333,21 @@ class ESTGenerateJob:
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
-            InforKeys.RESULT_KEY: "num_unique_ids"
+            InfoKeys.RESULT_KEY: "num_unique_ids"
         }
     )
     numImportedIds: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
-            InforKeys.RESULT_KEY: "num_ids"
+            InfoKeys.RESULT_KEY: "num_ids"
         }
     )
     outputConvergenceRatio: Mapped[int | None] = mapped_column(
         use_existing_column=True,
         info = {
             InfoKeys.IS_UPDATABLE: True,
-            InforKeys.RESULT_KEY: "convergence_ratio"
+            InfoKeys.RESULT_KEY: "convergence_ratio"
         }
     )
     numBlastEdges: Mapped[int | None] = mapped_column(
@@ -422,7 +422,7 @@ class ESTGenerateFastaJob(
     numFastaHeaders: Mapped[int | None] = mapped_column(
         info = {
             InfoKeys.IS_UPDATABLE: True,
-            InforKeys.RESULT_KEY: "num_headers"
+            InfoKeys.RESULT_KEY: "num_headers"
         }
     )
 
@@ -455,13 +455,13 @@ class ESTGenerateBlastJob(
     numBlastUnmatchedIds: Mapped[int | None] = mapped_column(
         info = {
             InfoKeys.IS_UPDATABLE: True,
-            InforKeys.RESULT_KEY: "num_blast_unmatched"
+            InfoKeys.RESULT_KEY: "num_blast_unmatched"
         }
     )
     numBlastRetrievedIds: Mapped[int | None] = mapped_column(
         info = {
             InfoKeys.IS_UPDATABLE: True,
-            InforKeys.RESULT_KEY: "num_blast_retr"
+            InfoKeys.RESULT_KEY: "num_blast_retr"
         }
     )
 
@@ -490,7 +490,7 @@ class ESTGenerateAccessionJob(
     numForeignIds: Mapped[int | None] = mapped_column(
         info = {
             InfoKeys.IS_UPDATABLE: True,
-            InforKeys.RESULT_KEY: "num_foreign"
+            InfoKeys.RESULT_KEY: "num_foreign"
         }
     )
 
