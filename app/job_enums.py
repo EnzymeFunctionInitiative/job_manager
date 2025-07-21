@@ -10,6 +10,7 @@ class Status(Flag):
     FAILED = auto()
     CANCELLED = auto()
     ARCHIVED = auto()
+    UNKNOWN = auto()
     
     # flag combinations
     INCOMPLETE = NEW | RUNNING

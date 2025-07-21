@@ -5,8 +5,10 @@ import json
 import shutil
 import subprocess
 from typing import Dict, Any, Optional
+
 from config import settings
 from plugins.base_connector import BaseConnector
+from app.job_enums import Status
 
 class Connector(BaseConnector):
     """
@@ -78,16 +80,16 @@ class Connector(BaseConnector):
                 print(f"Could not parse job ID from sbatch output: {stdout}")
         return None
 
-    def get_job_status(self, scheduler_job_id: int) -> str:
+    def get_job_status(self, scheduler_job_id: int) -> Status:
         """Checks job status using local sacct."""
         command = f"sacct -j {scheduler_job_id} --format=State --noheader"
         stdout, _ = self._execute_local_command(command)
         if stdout:
-            status = stdout.splitlines()[0].strip()
-            if "COMPLETED" in status: return "COMPLETED"
-            if "FAILED" in status or "CANCELLED" in status: return "FAILED"
-            if "RUNNING" in status or "PENDING" in status: return "RUNNING"
-        return "UNKNOWN"
+            status = stdout.splitlines()[0].strip().upper()
+            if "COMPLETED" in status: return Status.FINISHED
+            if "FAILED" in status or "CANCELLED" in status: return Status.FAILED
+            if "RUNNING" in status or "PENDING" in status: return Status.RUNNING
+        return Status.UNKNOWN
 
     def retrieve_job_results(self, job_id: int) -> bool:
         """No-op for local connector as results are already in the shared filesystem."""
