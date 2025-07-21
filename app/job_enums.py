@@ -10,6 +10,7 @@ class Status(Flag):
     FAILED = auto()
     CANCELLED = auto()
     ARCHIVED = auto()
+    UNKNOWN = auto()
     
     # flag combinations
     INCOMPLETE = NEW | RUNNING
@@ -50,15 +51,15 @@ class JobType(str, BaseEnum):
     remove the str data-type from the class def line.
     """
     JOB = "job"
-    EST_GENERATE_FASTA = "est_generate_fasta"
-    EST_GENERATE_FAMILIES = "est_generate_families"
     EST_GENERATE_BLAST = "est_generate_blast"
+    EST_GENERATE_FAMILIES = "est_generate_families"
+    EST_GENERATE_FASTA = "est_generate_fasta"
     EST_GENERATE_ACCESSION = "est_generate_accession"
-    EST_SSN_FINALIZATION = "est_ssn_finalization"
-    EST_NEIGHBORHOOD_CONNECTIVITY = "est_neighborhood_connectivity"
-    EST_CONVERGENCE_RATIO = "est_convergence_ratio"
-    EST_CLUSTER_ANALYSIS = "est_cluster_analysis"
     EST_COLOR_SSN = "est_color_ssn"
+    EST_NEIGHBORHOOD_CONNECTIVITY = "est_neighborhood_connectivity"
+    EST_CLUSTER_ANALYSIS = "est_cluster_analysis"
+    EST_CONVERGENCE_RATIO = "est_convergence_ratio"
+    EST_SSN_FINALIZATION = "est_ssn_finalization"
     GNT_GNN = "gnt_gnn"
     GNT_DIAGRAM_BLAST = "gnt_diagram_blast"
     GNT_DIAGRAM_FASTA = "gnt_diagram_fasta"
@@ -108,4 +109,5 @@ class InfoKeys(str, BaseEnum):
     PARAMETER_KEY = "parameter_key"
     IS_UPDATABLE = "is_updatable"
     RESULT_KEY = "result_key"
+    IS_FILTER = "is_filter"
 

@@ -22,18 +22,20 @@ def main():
     # Instantiate the dynamically loaded connector class
     connector = ConnectorClass()
     
-    handler = JobHandler(db, connector)
+    handler = JobHandler(connector)
 
     try:
         # Process new jobs
         new_jobs = db.query(Job).filter(Job.status == Status.NEW).all()
         for job in new_jobs:
-            handler.process_new_job(job)
+            results_dict = handler.process_new_job(job)
+            handler.apply_updates(db, job, results_dict)
 
         # Process running jobs
         running_jobs = db.query(Job).filter(Job.status == Status.RUNNING).all()
         for job in running_jobs:
-            handler.process_running_job(job)
+            results_dict = handler.process_running_job(job)
+            handler.apply_updates(db, job, results_dict)
 
     except Exception as e:
         print(f"An error occurred in the main loop: {e}")

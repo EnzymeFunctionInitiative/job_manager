@@ -3,6 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 
+from app.job_enums import Status
+
 class BaseConnector(ABC):
     """
     Abstract Base Class for execution connectors.
@@ -35,7 +37,7 @@ class BaseConnector(ABC):
         pass
 
     @abstractmethod
-    def get_job_status(self, scheduler_job_id: int) -> str:
+    def get_job_status(self, scheduler_job_id: int) -> Status:
         """
         Checks the status of a job on the cluster.
 
