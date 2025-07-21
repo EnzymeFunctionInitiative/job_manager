@@ -122,25 +122,25 @@ class JobHandler:
 
         return results_dict
 
-    #def apply_updates(self, db_conn, job: Job, results_dict: Dict[str,Any]):
-    #    """
-    #    Contents in results_dict get pushed to the Job object, followed by a 
-    #    commit() call on the database connection.
-    #    """
-    #    if not results_dict:
-    #        print("No updates applied to the Job ({job.__repr__})")
-    #        return
-    #    
-    #    # add an air-gap btwn updating the database by checking whether keys in
-    #    # the results_dict are labeled as updatable in the jOb table.
-    #    updatable_columns = job.get_updatable_attrs()
-    #    # loop over the items in results_dict
-    #    for key, val in results_dict.items():
-    #        if key not in updatable_columns:
-    #            continue
-    #        setattr(job, key, val)
+    def apply_updates(self, db_conn, job: Job, results_dict: Dict[str,Any]):
+        """
+        Contents in results_dict get pushed to the Job object, followed by a 
+        commit() call on the database connection.
+        """
+        if not results_dict:
+            print("No updates applied to the Job ({job.__repr__})")
+            return
+        
+        # add an air-gap btwn updating the database by checking whether keys in
+        # the results_dict are labeled as updatable in the jOb table.
+        updatable_columns = job.get_updatable_attrs()
+        # loop over the items in results_dict
+        for key, val in results_dict.items():
+            if key not in updatable_columns:
+                continue
+            setattr(job, key, val)
 
-    #    db_conn.commit()
+        db_conn.commit()
 
     def _create_parameter_dict(self, job: Job) -> Dict[str, Any]:
         """
