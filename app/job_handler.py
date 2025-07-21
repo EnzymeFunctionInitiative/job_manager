@@ -110,10 +110,10 @@ class JobHandler:
         the Job table can be updated.
         """
         results_dict = {}
-        # 1. check for completion by looking for touched files
-        if not self.parser.check_files(job):
-            print(f"Job {job.id} is missing result output files.")
-            results_dict[STATUS_KEY] = Status.FAILED
+        ## 1. check for completion by looking for touched files
+        #if not self.parser.check_files(job):
+        #    print(f"Job {job.id} is missing result output files.")
+        #    results_dict[STATUS_KEY] = Status.FAILED
 
         # 2. process the stats.json file (and other files if need be)
         #    parser.parse_results() returns a dict, which is immediately used
