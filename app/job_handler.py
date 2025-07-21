@@ -7,6 +7,7 @@ import json
 
 from app.job_enums import Status, Pipeline, ImportMode
 from app.models import Job, FilenameParameters
+from app.results_parser import ResultsParser
 #from plugins.notification import send_email
 from config import settings
 
@@ -21,6 +22,7 @@ FIN_OUTPUT_DIR_KEY = "final_output_dir"
 class JobHandler:
     def __init__(self, connector_instance):
         self.connector = connector_instance
+        self.parser = ResultsParser()
 
     def process_new_job(self, job: Job):
         """Handles the submission of a new job by delegating to the connector."""
@@ -48,7 +50,6 @@ class JobHandler:
         scheduler_job_id = self.connector.submit_job(job.id, cluster_params_path, pipeline)
 
         updates_dict = {}
-        updates = UpdaterNameSpace()
         if scheduler_job_id:
             updates_dict[STATUS_KEY] = Status.RUNNING
             updates_dict[JOBID_KEY] = scheduler_job_id
@@ -66,10 +67,8 @@ class JobHandler:
         """Checks the status of a running job."""
         print(f"Checking RUNNING job: {job.id} (Scheduler ID: {job.schedulerJobId})")
         
-        # connector.get_job_status() returns a status string
+        # connector.get_job_status() returns a Status Enum Flag not a string
         status = self.connector.get_job_status(job.schedulerJobId)
-        # convert that status string to a Status flag
-        status = Status.get_flag(status)
 
         updates_dict = {}
         if status == Status.RUNNING:
@@ -77,27 +76,25 @@ class JobHandler:
             
         elif status == Status.FAILED:
             print(f"Job {job.id} failed.")
-            updates_dict["status"] = Status.FAILED
+            updates_dict[STATUS_KEY] = status
             # should timeCompleted be a time reported from the scheduler or
             # just when the job_manager checks for completion?
-            updates_dict["timeCompleted"] = datetime.utcnow()
+            updates_dict[TIME_COMPLETED_KEY] = datetime.utcnow()
             # send_email(user_email, f"Job {job.id} Failed", "Your job has failed on the cluster.")
             
         if status == Status.FINISHED:
             print(f"Job {job.id} finished successfully.")
-            updates_dict[STATUS_KEY] = Status.FINISHED
-            # should timeCompleted be a time reported from the scheduler or
-            # just when the job_manager checks for completion?
-            updates_dict[TIME_COMPLETED_KEY] = datetime.utcnow()
+            updates_dict[STATUS_KEY] = status
             
             # Retrieve results using the connector
             self.connector.retrieve_job_results(job)
             
-            # check for completion by looking for touched files
-
             # Parse result file(s)
             results_dict = self.process_results(job)
             updates_dict.update(results_dict)
+           
+            # update the timeCompleted column
+            updates_dict[TIME_COMPLETED_KEY] = datetime.utcnow()
 
             # send_email(user_email, f"Job {job.id} Finished", "Your job has completed.")
 
@@ -112,34 +109,18 @@ class JobHandler:
         results files such as stats.json so the associated columns in
         the Job table can be updated.
         """
+        results_dict = {}
+        # 1. check for completion by looking for touched files
+        if not self.parser.check_files(job):
+            print(f"Job {job.id} is missing result output files.")
+            results_dict[STATUS_KEY] = Status.FAILED
 
-        # create a Updates NameSpace object instance, run the Parser method to
-        # process result files, then update the NameSpace obj and return that 
-        # to main
+        # 2. process the stats.json file (and other files if need be)
+        #    parser.parse_results() returns a dict, which is immediately used
+        #    to update the results_dict.
+        results_dict.update(self.parser.parse_results(job))
 
-        local_output_dir = os.path.join(
-            settings.LOCAL_JOB_DIRECTORY, 
-            str(job.id)
-        )
-       
-        # nearly all nextflow pipelines write a stats.json file that contain
-        # the respective result(s); assume the data typing in the json file is
-        # deserrialized correctly. 
-        with open(os.path.join(local_output_dir, "stats.json")) as stats:
-            results_dict = json.load(stats)
-
-        updates_dict= {}
-        # get job-specific column names to be updated
-        result_mappings = job.get_result_key_mapping()
-        # loop over the key:value pairs from the nf-output json file, check 
-        # whether the key maps to a column name in the Job table, and apply
-        # mapping to add the value to the results_dict
-        for key, val in results_dict.items():
-            # get the value associated with key from the mapping dict or get key
-            new_key = result_mappings.get(key, key)
-            updates_dict[new_key] = val
-
-        return updates_dict
+        return results_dict
 
     #def apply_updates(self, db_conn, job: Job, results_dict: Dict[str,Any]):
     #    """
