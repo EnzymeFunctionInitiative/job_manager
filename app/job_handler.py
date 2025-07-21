@@ -10,6 +10,14 @@ from app.models import Job, FilenameParameters
 #from plugins.notification import send_email
 from config import settings
 
+STATUS_KEY = "status"
+JOBID_KEY = "schedulerJobId"
+TIME_STARTED_KEY = "timeStarted"
+TIME_COMPLETED_KEY = "timeCompleted"
+FILTER_KEY = "filter"
+IMPORT_MODE_KEY = "import_mode"
+FIN_OUTPUT_DIR_KEY = "final_output_dir"
+
 class JobHandler:
     def __init__(self, connector_instance):
         self.connector = connector_instance
@@ -27,41 +35,28 @@ class JobHandler:
                 input_file = file_path
             else:
                 print(f"Input file not found for job {job.id}: {file_path}")
-                return {"status": Status.FAILED}
+                return {STATUS_KEY: Status.FAILED}
 
         # 2. Prepare the job environment using the connector
-        params = job.get_parameters_dict()
-        params.update(settings.NEXTFLOW_PARAMS)
-        params.update({"final_output_dir": settings.REMOTE_JOB_DIRECTORY + f"/{job.id}"})
-        if hasattr(job, "import_mode"):
-            params.update({"import_mode": str(job.import_mode)})
-        # handle parameters associated with filters for ESTGenerate jobs
-        if job.pipeline == Pipeline.EST:
-            filter_list = job.get_filter_parameters()
-            params["filter"] = []
-            for col_name in filter_list:
-                val = params.get(col_name)
-                if val:
-                    params["filter"].append(f"{col_name}={val}")
-                    params.pop(col_name)
-
+        params = self._create_parameter_dict(job)
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:
             print(f"Failed to prepare job environment for job {job.id}")
-            return {"status": Status.FAILED}
+            return {STATUS_KEY: Status.FAILED}
 
         # 3. Submit the job using the connector
         scheduler_job_id = self.connector.submit_job(job.id, cluster_params_path, pipeline)
 
         updates_dict = {}
+        updates = UpdaterNameSpace()
         if scheduler_job_id:
-            updates_dict["status"] = Status.RUNNING
-            updates_dict["schedulerJobId"] = scheduler_job_id
-            updates_dict["timeStarted"] = datetime.utcnow()
+            updates_dict[STATUS_KEY] = Status.RUNNING
+            updates_dict[JOBID_KEY] = scheduler_job_id
+            updates_dict[TIME_STARTED_KEY] = datetime.utcnow()
             print(f"Job {job.id} started with scheduler ID: {scheduler_job_id}")
             # send_email(user_email, f"Job {job.id} Started", "Your job is now running.")
         else:
-            updates_dict["status"] = Status.FAILED
+            updates_dict[STATUS_KEY] = Status.FAILED
             print(f"Failed to start job {job.id} on cluster.")
             # send_email(user_email, f"Job {job.id} Failed", "Your job failed to start.")
         
@@ -71,13 +66,16 @@ class JobHandler:
         """Checks the status of a running job."""
         print(f"Checking RUNNING job: {job.id} (Scheduler ID: {job.schedulerJobId})")
         
+        # connector.get_job_status() returns a status string
         status = self.connector.get_job_status(job.schedulerJobId)
+        # convert that status string to a Status flag
+        status = Status.get_flag(status)
 
         updates_dict = {}
-        if status == "RUNNING":
+        if status == Status.RUNNING:
             print(f"Job {job.id} is still running.")
             
-        elif status == "FAILED":
+        elif status == Status.FAILED:
             print(f"Job {job.id} failed.")
             updates_dict["status"] = Status.FAILED
             # should timeCompleted be a time reported from the scheduler or
@@ -85,18 +83,20 @@ class JobHandler:
             updates_dict["timeCompleted"] = datetime.utcnow()
             # send_email(user_email, f"Job {job.id} Failed", "Your job has failed on the cluster.")
             
-        if status == "COMPLETED":
+        if status == Status.FINISHED:
             print(f"Job {job.id} finished successfully.")
-            updates_dict["status"] = Status.FINISHED
+            updates_dict[STATUS_KEY] = Status.FINISHED
             # should timeCompleted be a time reported from the scheduler or
             # just when the job_manager checks for completion?
-            updates_dict["timeCompleted"] = datetime.utcnow()
+            updates_dict[TIME_COMPLETED_KEY] = datetime.utcnow()
             
             # Retrieve results using the connector
             self.connector.retrieve_job_results(job)
             
+            # check for completion by looking for touched files
+
             # Parse result file(s)
-            results_dict = self.parse_results(job)
+            results_dict = self.process_results(job)
             updates_dict.update(results_dict)
 
             # send_email(user_email, f"Job {job.id} Finished", "Your job has completed.")
@@ -106,12 +106,17 @@ class JobHandler:
         
         return updates_dict
 
-    def parse_results(self, job: Job) -> Dict[str, Any]:
+    def process_results(self, job: Job) -> Dict[str, Any]:
         """ 
         A job has completed but important summary data needs to be pulled from
-        stats.json (and potentially other files) so the associated columns in
+        results files such as stats.json so the associated columns in
         the Job table can be updated.
         """
+
+        # create a Updates NameSpace object instance, run the Parser method to
+        # process result files, then update the NameSpace obj and return that 
+        # to main
+
         local_output_dir = os.path.join(
             settings.LOCAL_JOB_DIRECTORY, 
             str(job.id)
@@ -136,24 +141,54 @@ class JobHandler:
 
         return updates_dict
 
-    def apply_updates(self, db_conn, job: Job, results_dict: Dict[str,Any]):
-        """
-        Contents in results_dict get pushed to the Job object, followed by a 
-        commit() call on the database connection.
-        """
-        if not results_dict:
-            print("No updates applied to the Job ({job.__repr__})")
-            return
-        
-        # add an air-gap btwn updating the database by checking whether keys in
-        # the results_dict are labeled as updatable in the jOb table.
-        updatable_columns = job.get_updatable_attrs()
-        # loop over the items in results_dict
-        for key, val in results_dict.items():
-            if key not in updatable_columns:
-                continue
-            setattr(job, key, val)
+    #def apply_updates(self, db_conn, job: Job, results_dict: Dict[str,Any]):
+    #    """
+    #    Contents in results_dict get pushed to the Job object, followed by a 
+    #    commit() call on the database connection.
+    #    """
+    #    if not results_dict:
+    #        print("No updates applied to the Job ({job.__repr__})")
+    #        return
+    #    
+    #    # add an air-gap btwn updating the database by checking whether keys in
+    #    # the results_dict are labeled as updatable in the jOb table.
+    #    updatable_columns = job.get_updatable_attrs()
+    #    # loop over the items in results_dict
+    #    for key, val in results_dict.items():
+    #        if key not in updatable_columns:
+    #            continue
+    #        setattr(job, key, val)
 
-        db_conn.commit()
+    #    db_conn.commit()
+
+    def _create_parameter_dict(self, job: Job) -> Dict[str, Any]:
+        """
+        Create the parameter dictionary containing all relevant key:value pairs
+        to run the nextflow pipeline.
+        """
+        # gather the initial dictionary of parameters from the Job object
+        params = job.get_parameters_dict()
+        
+        # add the hardcoded parameters defined in the settings.py code
+        params.update(settings.NEXTFLOW_PARAMS)
+        params.update({FIN_OUTPUT_DIR_KEY: settings.REMOTE_JOB_DIRECTORY + f"/{job.id}"})
+        
+        # not all Jobs will have an "import_mode" attribute, but add it when 
+        # present
+        if hasattr(job, IMPORT_MODE_KEY):
+            params.update({IMPORT_MODE_KEY: str(job.import_mode)})
+        
+        # handle parameters associated with filters for ESTGenerate jobs
+        if job.pipeline == Pipeline.EST:
+            filter_list = job.get_filter_parameters()
+            params[FILTER_KEY] = []
+            for col_name in filter_list:
+                val = params.get(col_name)
+                if val:
+                    params[FILTER_KEY].append(f"{col_name}={val}")
+                    params.pop(col_name)
+
+        return params
+
 
 
