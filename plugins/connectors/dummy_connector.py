@@ -5,8 +5,10 @@ import json
 import shutil
 import subprocess
 from typing import Dict, List, Any, Optional
+
 from config import settings
 from plugins.base_connector import BaseConnector
+from app.job_enums import Status
 
 class Connector(BaseConnector):
     """
