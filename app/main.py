@@ -5,12 +5,18 @@ from app.database import DatabaseHandler
 from app.models import Job, Status
 from app.job_handler import JobHandler
 from app.plugin_loader import load_connector_class
+from app.job_logger import setup_logger, clean_logger
 
 def main():
     """
     Main application loop to poll the database and process jobs.
     """
-    print("Starting HPC Job Manager.")
+    # create the logger that handles logging streams
+    main_logger = setup_logger(
+        settings.LOG_NAME,
+        settings.LOG_FILE_PATH,
+    )
+    main_logger.info("Starting the Job Manager.")
 
     # Load the connector class dynamically when the application starts.
     ConnectorClass = load_connector_class()
@@ -26,20 +32,34 @@ def main():
             # Process running jobs first
             running_jobs = database_handler.fetch_jobs(Status.RUNNING)
             for job in running_jobs:
+                main_logger.info("Processing %s.", job)
                 results_dict = handler.process_running_job(job)
                 database_handler.update_job(job, results_dict)
 
             # Process new jobs
             new_jobs = database_handler.fetch_jobs(Status.NEW)
             for job in new_jobs:
+                main_logger.info("Processing %s.", job)
                 results_dict = handler.process_new_job(job)
                 database_handler.update_job(job, results_dict)
             
             # Process finished jobs last
 
         except Exception as e:
-            print(f"An error occurred in the main loop: {e}")
-
+            # log the exception
+            main_logger.error(
+                "An error occurred in the main loop while processing %s.",
+                job,
+                exc_info = e
+            )
+            # close the logger's handles
+            clean_logger(main_logger)
+            # raise the error
+            raise
+        
+    main_logger.info("Shutting down the Job Manager.")
+    clean_logger(main_logger)
+    
 
 if __name__ == "__main__":
     main()
