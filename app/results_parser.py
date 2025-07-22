@@ -11,7 +11,7 @@ from config import settings
 
 class ResultsParser:
     def __init__(self):
-        self.results_dir = settings.LOCAL_JOB_DIR
+        self.results_dir = settings.LOCAL_JOB_DIRECTORY
         
     def parse_results(self, job) -> Dict[str, Any]:
         """ 
