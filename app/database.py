@@ -133,7 +133,10 @@ class DatabaseHandler:
             print(f"No updates applied to the ({job_obj.__repr__()}).")
             return
 
+        # add an air-gap btwn updating the database by checking whether keys in
+        # the results_dict are labeled as updatable in the jOb table.
         updatable_columns = job_obj.get_updatable_attrs()
+        # loop over the items in results_dict
         for key, value in update_dict.items():
             if key not in updatable_columns:
                 continue
