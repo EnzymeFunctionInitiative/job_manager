@@ -57,7 +57,7 @@ class ResultsParser:
         updates_dict = {}
         for key, val in results_dict.items():
             # get the value associated with key from the mapping dict or get key
-            new_key = result_mappings.get(key, key)
+            new_key = column_mapping_dict.get(key, key)
             updates_dict[new_key] = val
 
         return updates_dict
