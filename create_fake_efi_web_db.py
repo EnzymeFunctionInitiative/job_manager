@@ -7,10 +7,6 @@ from config import settings
 from app.database import DatabaseHandler
 import app.models
 
-#app.database.init_db() # Ensure database is initialized
-#db_session_generator = app.database.get_db_session()
-#db = next(db_session_generator)
-
 db_handler = DatabaseHandler()
 db_handler.load_data()
 
