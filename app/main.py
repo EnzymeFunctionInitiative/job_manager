@@ -39,11 +39,6 @@ def main():
 
         except Exception as e:
             print(f"An error occurred in the main loop: {e}")
-        # need to read up on whether context managers will perform their 
-        # __exit__ methods upon exceptions being thrown within the code they
-        # wrap around/manage
-        finally:
-            database_handler.close()
 
 
 if __name__ == "__main__":
