@@ -5,10 +5,14 @@ import json
 import shutil
 import subprocess
 from typing import Dict, List, Any, Optional
+import logging
 
 from config import settings
 from plugins.base_connector import BaseConnector
 from app.job_enums import Status
+from app.job_logger import logger_names
+
+module_logger = logging.getLogger(logger_names.CONNECTOR)
 
 class Connector(BaseConnector):
     """
@@ -26,7 +30,11 @@ class Connector(BaseConnector):
             )
             return result.stdout.strip(), result.stderr.strip()
         except subprocess.CalledProcessError as e:
-            print(f"Error executing local command: {command}\nStderr: {e.stderr}")
+            module_logger.error(
+                f"Error executing local command: %s\nStderr: %s", 
+                command, 
+                e.stderr
+            )
             return None, e.stderr
 
     def prepare_job_environment(
@@ -52,7 +60,11 @@ class Connector(BaseConnector):
 
             return params_file_path
         except (IOError, OSError) as e:
-            print(f"Failed to prepare local job environment for job {job_id}: {e}")
+            module_logger.error(
+                f"Failed to prepare local job environment for job %s.", 
+                job_id,
+                exc_info = e
+            )
             return None
 
     def submit_job(
@@ -72,7 +84,7 @@ class Connector(BaseConnector):
         )
 
         sbatch_command = f"echo sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition=efi --output=job_{job_id}.out --wrap='{nextflow_command}' Submitted batch job {job_id}"
-        print(sbatch_command)
+        module_logger.info("Job %s is submitted:\n\t%s", sbatch_command)
         #sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition=efi --output=job_{job_id}.out --wrap='{nextflow_command}'"
         stdout, _ = self._execute_local_command(sbatch_command, working_dir=job_path)
         
@@ -80,13 +92,16 @@ class Connector(BaseConnector):
             try:
                 return int(stdout.split()[-1])
             except (ValueError, IndexError):
-                print(f"Could not parse job ID from sbatch output: {stdout}")
+                module_logger.error(
+                    f"Could not parse job ID from sbatch output: %s.", 
+                    stdout,
+                )
         return None
 
     def get_job_status(self, scheduler_job_id: int) -> str:
         """Checks job status using local sacct."""
         command = f"echo sacct -j {scheduler_job_id} --format=State --noheader COMPLETED"
-        print(command)
+        module_logger.info("Job %s is submitted:\n\t%s", command)
         #command = f"sacct -j {scheduler_job_id} --format=State --noheader"
         stdout, _ = self._execute_local_command(command)
         if stdout:
@@ -98,5 +113,7 @@ class Connector(BaseConnector):
 
     def retrieve_job_results(self, job_id: int) -> bool:
         """No-op for local connector as results are already in the shared filesystem."""
-        print(f"LocalConnector: Results for job {job_id} are already in place.")
+        module_logger.info(
+            f"LocalConnector: Results for job {job_id} are already in place."
+        )
         return True

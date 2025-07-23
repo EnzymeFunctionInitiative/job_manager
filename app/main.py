@@ -1,11 +1,13 @@
 # app/main.py
 
 import time
+
+from config import settings
 from app.database import DatabaseHandler
 from app.models import Job, Status
 from app.job_handler import JobHandler
 from app.plugin_loader import load_connector_class
-from app.job_logger import setup_logger, clean_logger
+from app.job_logger import logger_names, setup_logger, clean_logger
 
 def main():
     """
@@ -13,7 +15,7 @@ def main():
     """
     # create the logger that handles logging streams
     main_logger = setup_logger(
-        settings.LOG_NAME,
+        logger_names.MAIN,
         settings.LOG_FILE_PATH,
     )
     main_logger.info("Starting the Job Manager.")

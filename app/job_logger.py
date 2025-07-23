@@ -2,6 +2,14 @@
 from typing import Tuple
 import logging
 import logging.handlers
+from enum import Enum
+
+class logger_names(str, Enum):
+    MAIN = "job_manager"
+    PLUGIN_LOADER = "job_manager.plugin_loader"
+    DATABASE = "job_manager.database"
+    JOB_HANDLER = "job_manager.job_handler"
+    CONNECTOR = "job_manager.connector"
 
 def setup_logger(
         name,
@@ -16,7 +24,7 @@ def setup_logger(
     logger.setLevel(file_level)
     
     # create a file handler that will write logging messages out to a file
-    file_handler = logging.handlers.FileHandler(
+    file_handler = logging.FileHandler(
         log_file, 
         mode = "a"
     )
@@ -30,12 +38,12 @@ def setup_logger(
 
     # create a console stream of logging messages, use a higher log level to
     # avoid overflowing the console
-    stream_handler = logging.handlers.StreamHandler()
+    stream_handler = logging.StreamHandler()
     stream_handler.setLevel(console_level)
 
     # create a uniform format for both handlers to use
     formatter = logging.Formatter(
-        '{asctime}\t\t{levelname}\t{module}({lineno})\t\t{message}:',
+        '{asctime}\t\t{levelname} {module:>15}({lineno}):\t{message}',
         style = "{" # specifically use {}-formatted or str.format() style
     )
     file_handler.setFormatter(formatter)
