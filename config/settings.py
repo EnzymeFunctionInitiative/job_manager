@@ -6,6 +6,7 @@
 EXECUTION_CONNECTOR = 'LOCAL'
 DRY_RUN = False
 
+
 # --- Logging --- 
 LOG_FILE_PATH = "/path/to/a/job_manager.log"
 
