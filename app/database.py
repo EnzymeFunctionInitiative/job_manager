@@ -22,6 +22,7 @@ class DatabaseHandler:
         self._engine: Optional[sqlalchemy.engine.Engine] = None
         self._Session: Optional[sqlalchemy.orm.sessionmaker] = None
         self.session: Optional[sqlalchemy.orm.Session] = None
+        self.dry_run = settings.DRY_RUN
 
     # enable context management via __enter__ and __exit__
     def __enter__(self):
@@ -54,7 +55,7 @@ class DatabaseHandler:
             self._Session = sessionmaker(bind=self._engine)
             # create the Session obj instance to use that database conn
             self.session = self._Session()
-            module_logger.info(f"Connected to database: {self.db_url}")
+            module_logger.info(f"Connected to database: %s", self.db_url)
             
         except Exception as e:
             module_logger.error(
@@ -70,7 +71,9 @@ class DatabaseHandler:
         dispose of the session.
         """
         # check that any changes get commit to the db before close is executed
-        self.session.commit()
+        if not self.dry_run:
+            self.session.commit()
+        
         try:
             if self.session:
                 self.session.close()
@@ -148,9 +151,18 @@ class DatabaseHandler:
             module_logger.error("Not connected to the database.")
             raise Exception
 
+        if self.dry_run:
+            module_logger.info(
+                f"Job %s would be updated with the given dictionary:\n%s",
+                job_obj.id,
+                update_dict
+            )
+            return
+
         if not update_dict:
             module_logger.info(
-                f"No updates applied to the ({job_obj.__repr__()})."
+                f"No updates applied to the (%s).",
+                job_obj.__repr__()
             )
             return
 
@@ -165,7 +177,8 @@ class DatabaseHandler:
         
         self.session.commit()
         module_logger.info(
-            f"Applied updates to ({job_obj.__repr__()})."
+            f"Applied updates to (%s).",
+            job_obj.__repr__()
         )
     ############################################################################
 

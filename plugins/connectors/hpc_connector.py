@@ -24,6 +24,7 @@ class Connector(BaseConnector):
         self.username = settings.HPC_USERNAME
         self.ssh_key_path = settings.HPC_SSH_KEY_PATH
         self.remote_base_dir = settings.REMOTE_JOB_DIRECTORY
+        self.dry_run = settings.DRY_RUN
 
     def _execute_remote_command(self, command):
         ssh_command = ["ssh", "-i", self.ssh_key_path, f"{self.username}@{self.hostname}", command]
@@ -32,8 +33,8 @@ class Connector(BaseConnector):
             return result.stdout.strip(), result.stderr.strip()
         except subprocess.CalledProcessError as e:
             module_logger.error(
-                f"Error executing remote command: %s\nStderr: %s", 
-                command, 
+                f"Error executing remote command: %s\nStderr: %s",
+                command,
                 e.stderr
             )
             return None, e.stderr
@@ -45,7 +46,7 @@ class Connector(BaseConnector):
             return True
         except subprocess.CalledProcessError as e:
             module_logger.error(
-                f"Error copying to remote.", 
+                f"Error copying to remote.",
                 exc_info = e
             )
             return False
@@ -58,7 +59,7 @@ class Connector(BaseConnector):
             return True
         except subprocess.CalledProcessError as e:
             module_logger.error(
-                f"Error copying from remote.", 
+                f"Error copying from remote.",
                 exc_info = e
             )
             return False
@@ -67,8 +68,18 @@ class Connector(BaseConnector):
         """Prepares the job environment on the remote HPC."""
         remote_job_dir = os.path.join(self.remote_base_dir, str(job_id))
         command = f"mkdir -p {remote_job_dir}"
-        module_logger.info("Job %s is being prepared:\n\t%s", command)
-        self._execute_remote_command(command)
+        module_logger.info(
+            "The remote working directory for Job %s is being prepared:\n\t%s",
+            command
+        )
+        if not self.dry_run:
+            self._execute_remote_command(command)
+        else:
+            module_logger.info(
+                "Input files for Job %s are not being prepared due to dry_run.",
+                job_id
+            )
+            return remote_job_dir
 
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
@@ -80,7 +91,7 @@ class Connector(BaseConnector):
                 # Copy params file to remote
                 remote_params_path = os.path.join(remote_job_dir, "params.json")
                 module_logger.info("Job %s has files transferred from %s to %s",
-                    local_params_path, 
+                    local_params_path,
                     remote_params_path
                 )
                 if not self._copy_to_remote(local_params_path, remote_params_path):
@@ -95,7 +106,7 @@ class Connector(BaseConnector):
                 return remote_params_path
             except (IOError, OSError) as e:
                 module_logger.error(
-                    f"Failed to prepare local job environment for job %s.", 
+                    f"Failed to prepare local job environment for job %s.",
                     job_id,
                     exc_info = e
                 )
@@ -115,14 +126,20 @@ class Connector(BaseConnector):
         
         sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition={settings.PARTITION} --output=job_{job_id}.out --wrap='{nextflow_command}'"
         module_logger.info("Job %s is submitted:\n\t%s", job_id, sbatch_command)
-        stdout, _ = self._execute_remote_command(sbatch_command)
+        # if dry_run is False, run the command
+        if not self.dry_run:
+            stdout, _ = self._execute_remote_command(sbatch_command)
+        # if dry_run is True, then create a fake stdout string that shows
+        # successful submission for demonstration purposes.
+        else:
+            stdout = "Submitted batch job 1"
         
         if stdout and "Submitted batch job" in stdout:
             try:
                 return int(stdout.split()[-1])
             except (ValueError, IndexError):
                 module_logger.error(
-                    f"Could not parse job ID from sbatch output: %s.", 
+                    f"Could not parse job ID from sbatch output: %s.",
                     stdout,
                 )
         return None
@@ -131,7 +148,14 @@ class Connector(BaseConnector):
         """Checks job status using remote sacct."""
         command = f"sacct -j {scheduler_job_id} --format=State --noheader"
         module_logger.info("Check job status:\n\t%s", command)
-        stdout, _ = self._execute_remote_command(command)
+        # if dry_run is False, run the command
+        if not self.dry_run:
+            stdout, _ = self._execute_remote_command(command)
+        # if dry_run is True, then create a fake stdout string that shows
+        # successful completion for demonstration purposes.
+        else:
+            stdout = "COMPLETED"
+        
         if stdout:
             status = stdout.splitlines()[0].strip().upper()
             if "COMPLETED" in status: return Status.FINISHED
@@ -146,4 +170,8 @@ class Connector(BaseConnector):
         module_logger.info(
             f"Copying results from {remote_output_dir} to {local_output_dir}."
         )
+        
+        if self.dry_run:
+            return True
+        
         return self._copy_from_remote(remote_output_dir, local_output_dir)

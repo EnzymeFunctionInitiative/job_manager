@@ -4,7 +4,7 @@
 # Choose the connector for your environment.
 # Options: 'HPC' (for remote cluster via SSH) or 'LOCAL' (for local/shared filesystem cluster)
 EXECUTION_CONNECTOR = 'LOCAL'
-DRY_RUN = False
+DRY_RUN = True
 
 
 # --- Logging --- 

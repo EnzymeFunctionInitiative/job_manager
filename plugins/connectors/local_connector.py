@@ -21,6 +21,7 @@ class Connector(BaseConnector):
 
     def __init__(self):
         self.job_base_dir = settings.LOCAL_JOB_DIRECTORY
+        self.dry_run = settings.DRY_RUN
 
     def _execute_local_command(self, command, working_dir=None):
         """Executes a command on the local machine."""
@@ -31,8 +32,8 @@ class Connector(BaseConnector):
             return result.stdout.strip(), result.stderr.strip()
         except subprocess.CalledProcessError as e:
             module_logger.error(
-                f"Error executing local command: %s\nStderr: %s", 
-                command, 
+                f"Error executing local command: %s\nStderr: %s",
+                command,
                 e.stderr
             )
             return None, e.stderr
@@ -44,8 +45,17 @@ class Connector(BaseConnector):
             input_file_local_path: Optional[str]
         ) -> Optional[str]:
         """Prepares the job environment on the shared filesystem."""
+        job_dir = os.path.join(self.job_base_dir, str(job_id))
+        
+        if self.dry_run:
+            module_logger.info(
+                f"Input files for Job %s would be gathered in %s",
+                job_id,
+                job_dir
+            )
+            return job_dir
+
         try:
-            job_dir = os.path.join(self.job_base_dir, str(job_id))
             os.makedirs(job_dir, exist_ok=True)
 
             # Write params file
@@ -61,7 +71,7 @@ class Connector(BaseConnector):
             return params_file_path
         except (IOError, OSError) as e:
             module_logger.error(
-                f"Failed to prepare local job environment for job %s.", 
+                f"Failed to prepare local job environment for job %s.",
                 job_id,
                 exc_info = e
             )
@@ -84,14 +94,20 @@ class Connector(BaseConnector):
         )
         sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition={settings.PARTITION} --output=job_{job_id}.out --wrap='{nextflow_command}'"
         module_logger.info("Job %s is submitted:\n\t%s", job_id, sbatch_command)
-        stdout, _ = self._execute_local_command(sbatch_command, working_dir=job_path)
+        # if dry_run is False, run the command
+        if not self.dry_run:
+            stdout, _ = self._execute_local_command(sbatch_command, working_dir=job_path)
+        # if dry_run is True, then create a fake stdout string that shows
+        # successful submission for demonstration purposes.
+        else:
+            stdout = "Submitted batch job 1"
         
         if stdout and "Submitted batch job" in stdout:
             try:
                 return int(stdout.split()[-1])
             except (ValueError, IndexError):
                 module_logger.error(
-                    f"Could not parse job ID from sbatch output: %s.", 
+                    f"Could not parse job ID from sbatch output: %s.",
                     stdout,
                 )
         return None
@@ -100,7 +116,14 @@ class Connector(BaseConnector):
         """Checks job status using local sacct."""
         command = f"sacct -j {scheduler_job_id} --format=State --noheader"
         module_logger.info("Check job status:\n\t%s", command)
-        stdout, _ = self._execute_local_command(command)
+        # if dry_run is False, run the command
+        if not self.dry_run:
+            stdout, _ = self._execute_local_command(command)
+        # if dry_run is True, then create a fake stdout string that shows
+        # successful completion for demonstration purposes.
+        else:
+            stdout = "COMPLETED"
+        
         if stdout:
             status = stdout.splitlines()[0].strip().upper()
             if "COMPLETED" in status: return Status.FINISHED

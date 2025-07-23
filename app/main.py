@@ -20,6 +20,13 @@ def main():
     )
     main_logger.info("Starting the Job Manager.")
 
+    if settings.DRY_RUN:
+        main_logger.info(
+            "This is just a dry run of the Job Manager. No commands will be"
+            + " executed. Parameter files will logged instead of written to"
+            + " file. No updates will be pushed to the Job database."
+        )
+
     # Load the connector class dynamically when the application starts.
     ConnectorClass = load_connector_class()
     # Instantiate the dynamically loaded connector class

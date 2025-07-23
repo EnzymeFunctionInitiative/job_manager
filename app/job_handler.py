@@ -27,6 +27,7 @@ class JobHandler:
     def __init__(self, connector_instance):
         self.connector = connector_instance
         self.parser = ResultsParser()
+        self.dry_run = settings.DRY_RUN
 
     def process_new_job(self, job: Job):
         """Handles the submission of a new job by delegating to the connector."""
@@ -41,8 +42,8 @@ class JobHandler:
                 input_file = file_path
             else:
                 module_logger.info(
-                    f"Input file not found for job {job.id}:"
-                    + f" {file_path}"
+                    f"Input file not found for job {job.id}: {file_path}."
+                    + f" Marking job as FAILED."
                 )
                 return {STATUS_KEY: Status.FAILED}
 
@@ -51,12 +52,17 @@ class JobHandler:
         cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
         if not cluster_params_path:
             module_logger.info(
-                "Failed to prepare job environment for job {job.id}"
+                f"Failed to prepare job environment for job {job.id}. Marking"
+                + " job as FAILED."
             )
             return {STATUS_KEY: Status.FAILED}
 
         # 3. Submit the job using the connector
-        scheduler_job_id = self.connector.submit_job(job.id, cluster_params_path, pipeline)
+        scheduler_job_id = self.connector.submit_job(
+            job.id,
+            cluster_params_path,
+            pipeline,
+        )
 
         updates_dict = {}
         if scheduler_job_id:
@@ -118,7 +124,7 @@ class JobHandler:
         return updates_dict
 
     def process_results(self, job: Job) -> Dict[str, Any]:
-        """ 
+        """
         A job has completed but important summary data needs to be pulled from
         results files such as stats.json so the associated columns in
         the Job table can be updated.
@@ -148,7 +154,7 @@ class JobHandler:
         params.update(settings.NEXTFLOW_PARAMS)
         params.update({FIN_OUTPUT_DIR_KEY: settings.REMOTE_JOB_DIRECTORY + f"/{job.id}"})
         
-        # not all Jobs will have an "import_mode" attribute, but add it when 
+        # not all Jobs will have an "import_mode" attribute, but add it when
         # present
         if hasattr(job, IMPORT_MODE_KEY):
             params.update({IMPORT_MODE_KEY: str(job.import_mode)})
