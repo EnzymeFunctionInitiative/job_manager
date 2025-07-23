@@ -84,7 +84,7 @@ class Connector(BaseConnector):
         )
 
         sbatch_command = f"echo sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition=efi --output=job_{job_id}.out --wrap='{nextflow_command}' Submitted batch job {job_id}"
-        module_logger.info("Job %s is submitted:\n\t%s", sbatch_command)
+        module_logger.info("Job %s is submitted:\n\t%s", job_id, sbatch_command)
         #sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition=efi --output=job_{job_id}.out --wrap='{nextflow_command}'"
         stdout, _ = self._execute_local_command(sbatch_command, working_dir=job_path)
         
@@ -101,7 +101,7 @@ class Connector(BaseConnector):
     def get_job_status(self, scheduler_job_id: int) -> str:
         """Checks job status using local sacct."""
         command = f"echo sacct -j {scheduler_job_id} --format=State --noheader COMPLETED"
-        module_logger.info("Job %s is submitted:\n\t%s", command)
+        module_logger.info("Check job status:\n\t%s", command)
         #command = f"sacct -j {scheduler_job_id} --format=State --noheader"
         stdout, _ = self._execute_local_command(command)
         if stdout:

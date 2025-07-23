@@ -114,7 +114,7 @@ class Connector(BaseConnector):
         )
         
         sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition={settings.PARTITION} --output=job_{job_id}.out --wrap='{nextflow_command}'"
-        module_logger.info("Job %s is submitted:\n\t%s", sbatch_command)
+        module_logger.info("Job %s is submitted:\n\t%s", job_id, sbatch_command)
         stdout, _ = self._execute_remote_command(sbatch_command)
         
         if stdout and "Submitted batch job" in stdout:
@@ -130,7 +130,7 @@ class Connector(BaseConnector):
     def get_job_status(self, scheduler_job_id: int) -> Status:
         """Checks job status using remote sacct."""
         command = f"sacct -j {scheduler_job_id} --format=State --noheader"
-        module_logger.info("Job %s is submitted:\n\t%s", command)
+        module_logger.info("Check job status:\n\t%s", command)
         stdout, _ = self._execute_remote_command(command)
         if stdout:
             status = stdout.splitlines()[0].strip().upper()

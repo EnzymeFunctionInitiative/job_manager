@@ -1,6 +1,7 @@
 # app/database.py
 
 from typing import Dict, Any
+import logging
 
 import sqlalchemy
 from sqlalchemy import URL, create_engine, select
