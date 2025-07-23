@@ -94,14 +94,13 @@ class Connector(BaseConnector):
         )
         sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition={settings.PARTITION} --output=job_{job_id}.out --wrap='{nextflow_command}'"
         module_logger.info("Job %s is submitted:\n\t%s", job_id, sbatch_command)
-        # if dry_run is False, run the command
-        if not self.dry_run:
-            stdout, _ = self._execute_local_command(sbatch_command, working_dir=job_path)
+        
         # if dry_run is True, then create a fake stdout string that shows
         # successful submission for demonstration purposes.
-        else:
-            stdout = "Submitted batch job 1"
-        
+        if self.dry_run:
+            return 1
+
+        stdout, _ = self._execute_local_command(sbatch_command, working_dir=job_path)
         if stdout and "Submitted batch job" in stdout:
             try:
                 return int(stdout.split()[-1])
@@ -116,14 +115,12 @@ class Connector(BaseConnector):
         """Checks job status using local sacct."""
         command = f"sacct -j {scheduler_job_id} --format=State --noheader"
         module_logger.info("Check job status:\n\t%s", command)
-        # if dry_run is False, run the command
-        if not self.dry_run:
-            stdout, _ = self._execute_local_command(command)
         # if dry_run is True, then create a fake stdout string that shows
         # successful completion for demonstration purposes.
-        else:
-            stdout = "COMPLETED"
+        if self.dry_run:
+            return Status.FINISHED
         
+        stdout, _ = self._execute_local_command(command)
         if stdout:
             status = stdout.splitlines()[0].strip().upper()
             if "COMPLETED" in status: return Status.FINISHED

@@ -72,14 +72,14 @@ class Connector(BaseConnector):
             "The remote working directory for Job %s is being prepared:\n\t%s",
             command
         )
-        if not self.dry_run:
-            self._execute_remote_command(command)
-        else:
+        if self.dry_run:
             module_logger.info(
                 "Input files for Job %s are not being prepared due to dry_run.",
                 job_id
             )
             return remote_job_dir
+
+        self._execute_remote_command(command)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
@@ -126,14 +126,12 @@ class Connector(BaseConnector):
         
         sbatch_command = f"sbatch --job-name=job_{job_id} --mem=24GB --ntasks=1 --cpus-per-task=1 --partition={settings.PARTITION} --output=job_{job_id}.out --wrap='{nextflow_command}'"
         module_logger.info("Job %s is submitted:\n\t%s", job_id, sbatch_command)
-        # if dry_run is False, run the command
-        if not self.dry_run:
-            stdout, _ = self._execute_remote_command(sbatch_command)
         # if dry_run is True, then create a fake stdout string that shows
         # successful submission for demonstration purposes.
-        else:
-            stdout = "Submitted batch job 1"
+        if self.dry_run:
+            return 1
         
+        stdout, _ = self._execute_remote_command(sbatch_command)
         if stdout and "Submitted batch job" in stdout:
             try:
                 return int(stdout.split()[-1])
@@ -148,14 +146,12 @@ class Connector(BaseConnector):
         """Checks job status using remote sacct."""
         command = f"sacct -j {scheduler_job_id} --format=State --noheader"
         module_logger.info("Check job status:\n\t%s", command)
-        # if dry_run is False, run the command
-        if not self.dry_run:
-            stdout, _ = self._execute_remote_command(command)
         # if dry_run is True, then create a fake stdout string that shows
         # successful completion for demonstration purposes.
-        else:
-            stdout = "COMPLETED"
+        if self.dry_run:
+            return Status.FINISHED
         
+        stdout, _ = self._execute_remote_command(command)
         if stdout:
             status = stdout.splitlines()[0].strip().upper()
             if "COMPLETED" in status: return Status.FINISHED
