@@ -15,7 +15,7 @@ def setup_logger(
         name,
         log_file,
         file_level=logging.DEBUG,
-        console_level=logging.ERROR
+        console_level=logging.DEBUG
     ) -> logging.Logger:
     """ Set up as a logging manager that writes to file and to stdout. """
     # create the logger, which can control multiple streams for the logged
