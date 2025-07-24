@@ -37,6 +37,8 @@ REMOTE_JOB_DIRECTORY = "/data/jobs"
 # The partition name jobs will be submitted to.
 PARTITION = "queue_name"
 
+# Set a maximum number of running Jobs to be submitted at any one time
+MAX_NUM_RUNNING_JOB = 3
 
 # --- Cluster Configuration (Used by both connectors) ---
 # The path to the Nextflow executable on the cluster
