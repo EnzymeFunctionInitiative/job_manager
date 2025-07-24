@@ -1,3 +1,4 @@
+# app/flag_enum_type.py
 
 from typing import Union
 from enum import Flag
@@ -38,7 +39,7 @@ class FlagEnumType(TypeDecorator):
         custom handling for this object. Documentation:
         https://docs.sqlalchemy.org/en/20/core/custom_types.html#sqlalchemy.types.TypeDecorator.process_result_value
 
-        This is used to convert a row column's value to the returned python 
+        This is used to convert a row column's value to the returned python
         type, for example a status column value of "queued" in the DB is
         converted to Status.QUEUED.
         """

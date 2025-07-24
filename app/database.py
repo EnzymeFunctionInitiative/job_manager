@@ -1,6 +1,7 @@
 # app/database.py
 
 from typing import Dict, Any
+import logging
 
 import sqlalchemy
 from sqlalchemy import URL, create_engine, select
@@ -9,6 +10,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from config import settings
 from app.job_enums import Status
 from app.models import Base, Job
+from app.job_logger import logger_names
+
+module_logger = logging.getLogger(logger_names.DATABASE)
 
 class DatabaseHandler:
     def __init__(self):
@@ -18,6 +22,7 @@ class DatabaseHandler:
         self._engine: Optional[sqlalchemy.engine.Engine] = None
         self._Session: Optional[sqlalchemy.orm.sessionmaker] = None
         self.session: Optional[sqlalchemy.orm.Session] = None
+        self.dry_run = settings.DRY_RUN
 
     # enable context management via __enter__ and __exit__
     def __enter__(self):
@@ -50,10 +55,13 @@ class DatabaseHandler:
             self._Session = sessionmaker(bind=self._engine)
             # create the Session obj instance to use that database conn
             self.session = self._Session()
-            print(f"Connected to database: {self.db_url}")
+            module_logger.info("Connected to database: %s", self.db_url)
             
         except Exception as e:
-            print(f"Error connecting to database: {e}")
+            module_logger.error(
+                "Error connecting to database.",
+                exc_info = e
+            )
             raise
 
     def close(self):
@@ -63,19 +71,28 @@ class DatabaseHandler:
         dispose of the session.
         """
         # check that any changes get commit to the db before close is executed
-        self.session.commit()
+        if not self.dry_run:
+            self.session.commit()
+        
         try:
             if self.session:
                 self.session.close()
                 self.session = None
-                print("Disconnected from database (session closed)")
+                module_logger.info(
+                    "Disconnected from database (session closed)."
+                )
             if self._engine:
                 self._engine.dispose()
                 self._engine = None
-                print("Disconnected from database (engine disposed)")
+                module_logger.info(
+                    "Disconnected from database (engine disposed)."
+                )
             
         except Exception as e:
-            print(f"Error disconnecting from database: {e}")
+            module_logger.error(
+                "Error disconnecting from database.",
+                exc_info = e
+            )
             raise
 
     def fetch_jobs(self,
@@ -97,7 +114,8 @@ class DatabaseHandler:
                 result from the self.session.execute() call. Is an iterator.
         """
         if not self.session:
-            raise Exception("Not connected to the database")
+            module_logger.error("Not connected to the database.")
+            raise Exception
         
         # `status` can be a flag with membership. If so, it needs to be
         # separated into a list of its component Status flag strings
@@ -109,8 +127,11 @@ class DatabaseHandler:
             for job in self.session.execute(statement):
                 yield job[0]
         except Exception as e:
-            print("Error fetching job rows from the database with given"
-                + f" status strings: {status_strings}\n {e}")
+            module_logger.error("Error fetching job rows from the database"
+                + " with given status strings: %s",
+                status_strings,
+                exc_info = e
+            )
             raise
 
     def update_job(self, job_obj: Job, update_dict: Dict[str, Any]) -> None:
@@ -127,10 +148,22 @@ class DatabaseHandler:
                 values are the new values to be updated to.
         """
         if not self.session:
-            raise Exception("Not connected to the database")
+            module_logger.error("Not connected to the database.")
+            raise Exception
+
+        if self.dry_run:
+            module_logger.info(
+                "Job %s would be updated with the given dictionary:\n%s",
+                job_obj.id,
+                update_dict
+            )
+            return
 
         if not update_dict:
-            print(f"No updates applied to the ({job_obj.__repr__()}).")
+            module_logger.info(
+                "No updates applied to the (%s).",
+                job_obj.__repr__()
+            )
             return
 
         # add an air-gap btwn updating the database by checking whether keys in
@@ -143,5 +176,9 @@ class DatabaseHandler:
             setattr(job_obj, key, value)
         
         self.session.commit()
+        module_logger.info(
+            "Applied updates to (%s).",
+            job_obj.__repr__()
+        )
     ############################################################################
 

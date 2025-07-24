@@ -1,8 +1,13 @@
 # app/plugin_loader.py
 
 import importlib
+import logging
+
 from config import settings
 from plugins.base_connector import BaseConnector
+from app.job_logger import logger_names
+
+module_logger = logging.getLogger(logger_names.PLUGIN_LOADER)
 
 def load_connector_class():
     """
@@ -27,15 +32,34 @@ def load_connector_class():
         
         # Ensure the loaded class is a valid connector
         if not issubclass(connector_class, BaseConnector):
-             raise TypeError(
-                f"Connector class in {module_name} must inherit from BaseConnector"
-             )
+            module_logger.error(
+                "Connector class in '%s' must inherit from BaseConnector",
+                module_name,
+            )
+            raise TypeError
              
-        print(f"Successfully loaded connector: {connector_class.__name__} from {module_name}")
+        module_logger.info(
+            "Successfully loaded connector: %s from %s",
+            connector_class.__name__,
+            module_name
+        )
         return connector_class
         
-    except ImportError:
-        raise ImportError(f"Could not import connector module: '{module_name}'. Check if the file exists and the EXECUTION_CONNECTOR setting is correct.")
-    except AttributeError:
-        raise AttributeError(f"Could not find a class named 'Connector' in module: '{module_name}'. Please ensure the plugin class is named correctly.")
+    except ImportError as e:
+        module_logger.error(
+            "Could not import connector module: '%s'. Check if the file exists"
+            + " and the EXECUTION_CONNECTOR setting is correct.",
+            module_name,
+            exc_info = e
+        )
+        raise
+
+    except AttributeError as e:
+        module_logger.error(
+            "Could not find a class named 'Connector' in module: '%s'. Please"
+            + " ensure the plugin class is named correctly.",
+            module_name,
+            exc_info = e
+        )
+        raise
 

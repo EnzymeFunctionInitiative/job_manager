@@ -4,12 +4,18 @@
 # Choose the connector for your environment.
 # Options: 'HPC' (for remote cluster via SSH) or 'LOCAL' (for local/shared filesystem cluster)
 EXECUTION_CONNECTOR = 'LOCAL'
+DRY_RUN = True
+
+
+# --- Logging --- 
+LOG_FILE_PATH = "/path/to/a/job_manager.log"
 
 
 # --- Database Configuration ---
 # Example for SQLite: "sqlite:///jobs.db"
 # Example for PostgreSQL: "postgresql://user:password@host:port/database"
 DATABASE_URI = "sqlite:///jobs.db"
+
 
 # --- File System Configuration ---
 # The base directory where job files are stored.
@@ -18,6 +24,7 @@ DATABASE_URI = "sqlite:///jobs.db"
 LOCAL_JOB_DIRECTORY = "/data/jobs"
 # The directory where input files for jobs are located
 LOCAL_INPUT_FILE_SOURCE_DIR = "/data/inputs"
+
 
 # --- HPC Configuration (Used by 'HPC' connector) ---
 HPC_HOSTNAME = "your-hpc-hostname"
