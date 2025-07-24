@@ -53,14 +53,30 @@ def main():
                 + " jobs).",
                 n_running_jobs
             )
-            # see if new jobs can be submitted and do so
-            if n_running_jobs < settings.MAX_NUM_RUNNING_JOB:
-                # Process new jobs
-                new_jobs = database_handler.fetch_jobs(Status.NEW)
-                for job in new_jobs:
-                    main_logger.info("Processing %s.", job)
-                    results_dict = handler.process_new_job(job)
-                    database_handler.update_job(job, results_dict)
+            new_jobs = database_handler.fetch_jobs(Status.NEW)
+            while n_running_jobs < settings.MAX_NUM_RUNNING_JOB:
+                # gotta check next in the try block because the new_jobs 
+                # generator could throw a StopIteration exception. So cleanly
+                # handle that case. 
+                try:
+                    job = next(new_jobs)
+                except StopIteration:
+                    main_logger.info("No NEW jobs need to be submitted.")
+                    break
+                
+                main_logger.info("Processing %s.", job)
+                results_dict = handler.process_new_job(job)
+                database_handler.update_job(job, results_dict)
+                n_running_jobs += 1
+
+            ## see if new jobs can be submitted and do so
+            #if n_running_jobs < settings.MAX_NUM_RUNNING_JOB:
+            #    # Process new jobs
+            #    new_jobs = database_handler.fetch_jobs(Status.NEW)
+            #    for job in new_jobs:
+            #        main_logger.info("Processing %s.", job)
+            #        results_dict = handler.process_new_job(job)
+            #        database_handler.update_job(job, results_dict)
             
             # Process finished jobs last
 
