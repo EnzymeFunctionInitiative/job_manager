@@ -45,12 +45,22 @@ def main():
                 results_dict = handler.process_running_job(job)
                 database_handler.update_job(job, results_dict)
 
-            # Process new jobs
-            new_jobs = database_handler.fetch_jobs(Status.NEW)
-            for job in new_jobs:
-                main_logger.info("Processing %s.", job)
-                results_dict = handler.process_new_job(job)
-                database_handler.update_job(job, results_dict)
+            # requery the database to get the number of running jobs
+            n_running_jobs = len(list(database_handler.fetch_jobs(Status.RUNNING)))
+            main_logger.info(
+                "There are currently %s EFI jobs running on the"
+                + " compute resource (not accounting for nextflow subprocess"
+                + " jobs).",
+                n_running_jobs
+            )
+            # see if new jobs can be submitted and do so
+            if n_running_jobs < settings.MAX_NUM_RUNNING_JOB:
+                # Process new jobs
+                new_jobs = database_handler.fetch_jobs(Status.NEW)
+                for job in new_jobs:
+                    main_logger.info("Processing %s.", job)
+                    results_dict = handler.process_new_job(job)
+                    database_handler.update_job(job, results_dict)
             
             # Process finished jobs last
 
