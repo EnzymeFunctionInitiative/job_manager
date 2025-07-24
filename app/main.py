@@ -45,8 +45,11 @@ def main():
                 results_dict = handler.process_running_job(job)
                 database_handler.update_job(job, results_dict)
 
-            # requery the database to get the number of running jobs
-            n_running_jobs = len(list(database_handler.fetch_jobs(Status.RUNNING)))
+            # requery the database to get the number of running jobs but don't
+            # actually stash the whole list of all job rows
+            n_running_jobs = sum(
+                1 for job in database_handler.fetch_jobs(Status.RUNNING)
+            )
             main_logger.info(
                 "There are currently %s EFI jobs running on the"
                 + " compute resource (not accounting for nextflow subprocess"
