@@ -72,15 +72,6 @@ def main():
                 database_handler.update_job(job, results_dict)
                 n_running_jobs += 1
 
-            ## see if new jobs can be submitted and do so
-            #if n_running_jobs < settings.MAX_NUM_RUNNING_JOB:
-            #    # Process new jobs
-            #    new_jobs = database_handler.fetch_jobs(Status.NEW)
-            #    for job in new_jobs:
-            #        main_logger.info("Processing %s.", job)
-            #        results_dict = handler.process_new_job(job)
-            #        database_handler.update_job(job, results_dict)
-            
             # Process finished jobs last
 
         except Exception as e:
