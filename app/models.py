@@ -100,7 +100,7 @@ class Job(Base):
    
     def get_filter_parameters(self) -> List[str]:
         """
-        Return a list of column attribute names for columns that are 
+        Return a list of column attribute names for columns that are
         associated with filtering sequences out of an input set of sequences.
         """
         mapper = inspect(self.__class__)

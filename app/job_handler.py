@@ -32,28 +32,42 @@ class JobHandler:
     def process_new_job(self, job: Job):
         """Handles the submission of a new job by delegating to the connector."""
         pipeline = str(job.pipeline)
-        module_logger.info(f"Processing NEW job: {job.id} is a {pipeline} job")
+        module_logger.info(
+            "Processing NEW job: %s is a %s job",
+            job.id,
+            pipeline
+        )
         
         # 1. Get job parameters and input file path
         input_file = None
         if isinstance(job, FilenameParameters) and job.jobFilename:
-            file_path = os.path.join(settings.LOCAL_INPUT_FILE_SOURCE_DIR, job.jobFilename)
+            file_path = os.path.join(
+                settings.LOCAL_INPUT_FILE_SOURCE_DIR,
+                job.jobFilename
+            )
             if os.path.exists(file_path):
                 input_file = file_path
             else:
                 module_logger.info(
-                    f"Input file not found for job {job.id}: {file_path}."
-                    + f" Marking job as FAILED."
+                    "Input file not found for job %s: %s. Marking job as"
+                    + " FAILED.",
+                    job.id,
+                    file_path
                 )
                 return {STATUS_KEY: Status.FAILED}
 
         # 2. Prepare the job environment using the connector
         params = self._create_parameter_dict(job)
-        cluster_params_path = self.connector.prepare_job_environment(job.id, params, input_file)
+        cluster_params_path = self.connector.prepare_job_environment(
+            job.id,
+            params,
+            input_file
+        )
         if not cluster_params_path:
             module_logger.info(
-                f"Failed to prepare job environment for job {job.id}. Marking"
-                + " job as FAILED."
+                "Failed to prepare job environment for job %s. Marking job as"
+                + " FAILED.",
+                job.id
             )
             return {STATUS_KEY: Status.FAILED}
 
@@ -70,12 +84,14 @@ class JobHandler:
             updates_dict[JOBID_KEY] = scheduler_job_id
             updates_dict[TIME_STARTED_KEY] = datetime.utcnow()
             module_logger.info(
-                f"Job {job.id} started with scheduler ID: {scheduler_job_id}"
+                "Job %s started with scheduler ID: %s",
+                job.id,
+                scheduler_job_id
             )
             # send_email(user_email, f"Job {job.id} Started", "Your job is now running.")
         else:
             updates_dict[STATUS_KEY] = Status.FAILED
-            module_logger.info(f"Failed to start job {job.id} on cluster.")
+            module_logger.info("Failed to start job %s on cluster.", job.id)
             # send_email(user_email, f"Job {job.id} Failed", "Your job failed to start.")
         
         return updates_dict
@@ -83,8 +99,9 @@ class JobHandler:
     def process_running_job(self, job: Job):
         """Checks the status of a running job."""
         module_logger.info(
-            f"Checking RUNNING job: {job.id} (Scheduler ID:"
-            + f" {job.schedulerJobId})"
+            "Checking RUNNING job: %s (Scheduler ID: %s)",
+            job.id,
+            job.schedulerJobId
         )
         
         # connector.get_job_status() returns a Status Enum Flag not a string
@@ -92,10 +109,10 @@ class JobHandler:
 
         updates_dict = {}
         if status == Status.RUNNING:
-            module_logger.info(f"Job {job.id} is still running.")
+            module_logger.info("Job %s is still running.", job.id)
             
         elif status == Status.FAILED:
-            module_logger.info(f"Job {job.id} failed.")
+            module_logger.info("Job %s failed.", job.id)
             updates_dict[STATUS_KEY] = status
             # should timeCompleted be a time reported from the scheduler or
             # just when the job_manager checks for completion?
@@ -103,7 +120,7 @@ class JobHandler:
             # send_email(user_email, f"Job {job.id} Failed", "Your job has failed on the cluster.")
             
         if status == Status.FINISHED:
-            module_logger.info(f"Job {job.id} finished successfully.")
+            module_logger.info("Job %s finished successfully.", job.id)
             updates_dict[STATUS_KEY] = status
             
             # Retrieve results using the connector
@@ -119,7 +136,11 @@ class JobHandler:
             # send_email(user_email, f"Job {job.id} Finished", "Your job has completed.")
 
         else: # UNKNOWN or other states
-            module_logger.info(f"Job {job.id} has an unknown status: {status}")
+            module_logger.info(
+                "Job %s has an unknown status: %s",
+                job.id,
+                status
+            )
         
         return updates_dict
 
@@ -152,7 +173,9 @@ class JobHandler:
         
         # add the hardcoded parameters defined in the settings.py code
         params.update(settings.NEXTFLOW_PARAMS)
-        params.update({FIN_OUTPUT_DIR_KEY: settings.REMOTE_JOB_DIRECTORY + f"/{job.id}"})
+        params.update(
+            {FIN_OUTPUT_DIR_KEY: settings.REMOTE_JOB_DIRECTORY + f"/{job.id}"}
+        )
         
         # not all Jobs will have an "import_mode" attribute, but add it when
         # present

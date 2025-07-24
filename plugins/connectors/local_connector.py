@@ -32,7 +32,7 @@ class Connector(BaseConnector):
             return result.stdout.strip(), result.stderr.strip()
         except subprocess.CalledProcessError as e:
             module_logger.error(
-                f"Error executing local command: %s\nStderr: %s",
+                "Error executing local command: %s\nStderr: %s",
                 command,
                 e.stderr
             )
@@ -49,7 +49,7 @@ class Connector(BaseConnector):
         
         if self.dry_run:
             module_logger.info(
-                f"Input files for Job %s would be gathered in %s",
+                "Input files for Job %s would be gathered in %s",
                 job_id,
                 job_dir
             )
@@ -71,7 +71,7 @@ class Connector(BaseConnector):
             return params_file_path
         except (IOError, OSError) as e:
             module_logger.error(
-                f"Failed to prepare local job environment for job %s.",
+                "Failed to prepare local job environment for job %s.",
                 job_id,
                 exc_info = e
             )
@@ -106,7 +106,7 @@ class Connector(BaseConnector):
                 return int(stdout.split()[-1])
             except (ValueError, IndexError):
                 module_logger.error(
-                    f"Could not parse job ID from sbatch output: %s.",
+                    "Could not parse job ID from sbatch output: %s.",
                     stdout,
                 )
         return None
@@ -131,6 +131,7 @@ class Connector(BaseConnector):
     def retrieve_job_results(self, job_id: int) -> bool:
         """No-op for local connector as results are already in the shared filesystem."""
         module_logger.info(
-            f"LocalConnector: Results for job {job_id} are already in place."
+            "LocalConnector: Results for job %s are already in place.",
+            job_id
         )
         return True

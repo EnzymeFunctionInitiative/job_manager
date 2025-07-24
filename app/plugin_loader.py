@@ -38,12 +38,17 @@ def load_connector_class():
             )
             raise TypeError
              
-        module_logger.info(f"Successfully loaded connector: {connector_class.__name__} from {module_name}")
+        module_logger.info(
+            "Successfully loaded connector: %s from %s",
+            connector_class.__name__,
+            module_name
+        )
         return connector_class
         
     except ImportError as e:
         module_logger.error(
-            "Could not import connector module: '%s'. Check if the file exists and the EXECUTION_CONNECTOR setting is correct.",
+            "Could not import connector module: '%s'. Check if the file exists"
+            + " and the EXECUTION_CONNECTOR setting is correct.",
             module_name,
             exc_info = e
         )
@@ -51,7 +56,8 @@ def load_connector_class():
 
     except AttributeError as e:
         module_logger.error(
-            "Could not find a class named 'Connector' in module: '%s'. Please ensure the plugin class is named correctly.",
+            "Could not find a class named 'Connector' in module: '%s'. Please"
+            + " ensure the plugin class is named correctly.",
             module_name,
             exc_info = e
         )

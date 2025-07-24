@@ -55,7 +55,7 @@ class DatabaseHandler:
             self._Session = sessionmaker(bind=self._engine)
             # create the Session obj instance to use that database conn
             self.session = self._Session()
-            module_logger.info(f"Connected to database: %s", self.db_url)
+            module_logger.info("Connected to database: %s", self.db_url)
             
         except Exception as e:
             module_logger.error(
@@ -153,7 +153,7 @@ class DatabaseHandler:
 
         if self.dry_run:
             module_logger.info(
-                f"Job %s would be updated with the given dictionary:\n%s",
+                "Job %s would be updated with the given dictionary:\n%s",
                 job_obj.id,
                 update_dict
             )
@@ -161,7 +161,7 @@ class DatabaseHandler:
 
         if not update_dict:
             module_logger.info(
-                f"No updates applied to the (%s).",
+                "No updates applied to the (%s).",
                 job_obj.__repr__()
             )
             return
@@ -177,7 +177,7 @@ class DatabaseHandler:
         
         self.session.commit()
         module_logger.info(
-            f"Applied updates to (%s).",
+            "Applied updates to (%s).",
             job_obj.__repr__()
         )
     ############################################################################

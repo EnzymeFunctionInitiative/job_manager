@@ -1,3 +1,4 @@
+# app/job_enums.py
 
 from typing import Union
 from enum import Flag, auto, Enum

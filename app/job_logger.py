@@ -1,3 +1,4 @@
+# app/job_logger.py
 
 from typing import Tuple
 import logging
@@ -25,7 +26,7 @@ def setup_logger(
     
     # create a file handler that will write logging messages out to a file
     file_handler = logging.FileHandler(
-        log_file, 
+        log_file,
         mode = "a"
     )
     #file_handler = logging.handlers.TimedRotatingFileHandler(

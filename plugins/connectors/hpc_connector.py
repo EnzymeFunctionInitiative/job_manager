@@ -33,7 +33,7 @@ class Connector(BaseConnector):
             return result.stdout.strip(), result.stderr.strip()
         except subprocess.CalledProcessError as e:
             module_logger.error(
-                f"Error executing remote command: %s\nStderr: %s",
+                "Error executing remote command: %s\nStderr: %s",
                 command,
                 e.stderr
             )
@@ -46,7 +46,7 @@ class Connector(BaseConnector):
             return True
         except subprocess.CalledProcessError as e:
             module_logger.error(
-                f"Error copying to remote.",
+                "Error copying to remote.",
                 exc_info = e
             )
             return False
@@ -59,7 +59,7 @@ class Connector(BaseConnector):
             return True
         except subprocess.CalledProcessError as e:
             module_logger.error(
-                f"Error copying from remote.",
+                "Error copying from remote.",
                 exc_info = e
             )
             return False
@@ -91,6 +91,7 @@ class Connector(BaseConnector):
                 # Copy params file to remote
                 remote_params_path = os.path.join(remote_job_dir, "params.json")
                 module_logger.info("Job %s has files transferred from %s to %s",
+                    job_id,
                     local_params_path,
                     remote_params_path
                 )
@@ -106,7 +107,7 @@ class Connector(BaseConnector):
                 return remote_params_path
             except (IOError, OSError) as e:
                 module_logger.error(
-                    f"Failed to prepare local job environment for job %s.",
+                    "Failed to prepare local job environment for job %s.",
                     job_id,
                     exc_info = e
                 )
@@ -137,7 +138,7 @@ class Connector(BaseConnector):
                 return int(stdout.split()[-1])
             except (ValueError, IndexError):
                 module_logger.error(
-                    f"Could not parse job ID from sbatch output: %s.",
+                    "Could not parse job ID from sbatch output: %s.",
                     stdout,
                 )
         return None
@@ -164,7 +165,9 @@ class Connector(BaseConnector):
         remote_output_dir = os.path.join(self.remote_base_dir, str(job_id), "output")
         local_output_dir = os.path.join(settings.LOCAL_JOB_DIRECTORY, str(job_id))
         module_logger.info(
-            f"Copying results from {remote_output_dir} to {local_output_dir}."
+            "Copying results from %s to %s.",
+            remote_output_dir,
+            local_output_dir
         )
         
         if self.dry_run:
