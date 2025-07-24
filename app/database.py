@@ -122,7 +122,7 @@ class DatabaseHandler:
         status_strings = [flag.__str__() for flag in Status if flag in status]
         try:
             # query string using the status_strings list
-            statement = select(self._Job).where(self._Job.status.in_(status_strings))
+            statement = select(self._Job).where(self._Job.status.in_(status_strings)).order_by(self._Job.id.asc())
             # execute the query
             for job in self.session.execute(statement):
                 yield job[0]
