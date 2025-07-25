@@ -119,7 +119,7 @@ class JobHandler:
             updates_dict[TIME_COMPLETED_KEY] = datetime.utcnow()
             # send_email(user_email, f"Job {job.id} Failed", "Your job has failed on the cluster.")
             
-        if status == Status.FINISHED:
+        elif status == Status.FINISHED:
             module_logger.info("Job %s finished successfully.", job.id)
             updates_dict[STATUS_KEY] = status
             
