@@ -53,7 +53,7 @@ class Connector(BaseConnector):
                 job_id,
                 job_dir
             )
-            return job_dir
+            return os.path.join(job_dir, "fake_params.json")
         
         try:
             os.makedirs(job_dir, exist_ok=True)
