@@ -171,7 +171,7 @@ class Connector(BaseConnector):
 
     def retrieve_job_results(self, job_id: int) -> bool:
         """Copies results from the remote HPC to the local filesystem."""
-        remote_output_dir = os.path.join(self.remote_base_dir, str(job_id), "output")
+        remote_output_dir = os.path.join(self.remote_base_dir, str(job_id))
         local_output_dir = os.path.join(settings.LOCAL_JOB_DIRECTORY, str(job_id))
         module_logger.info(
             "Copying results from %s to %s.",
