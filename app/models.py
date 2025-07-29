@@ -30,7 +30,7 @@ class Job(Base):
         info = {InfoKeys.IS_PARAMETER: True, InfoKeys.PARAMETER_KEY: "job_id"}
     )
     uuid: Mapped[str] = mapped_column(nullable=False)
-    user_id: Mapped[int | None] = mapped_column("user")
+    user_id: Mapped[int | None]
     status: Mapped[Status] = mapped_column(
         FlagEnumType(Status),
         nullable=False,

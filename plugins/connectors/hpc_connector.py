@@ -27,7 +27,10 @@ class Connector(BaseConnector):
         self.dry_run = settings.DRY_RUN
 
     def _execute_remote_command(self, command):
-        ssh_command = ["ssh", "-i", self.ssh_key_path, f"{self.username}@{self.hostname}", command]
+        if self.ssh_key_path:
+            ssh_command = ["ssh", "-i", self.ssh_key_path, f"{self.username}@{self.hostname}", command]
+        else:
+            ssh_command = ["ssh", f"{self.username}@{self.hostname}", command]
         try:
             result = subprocess.run(ssh_command, capture_output=True, text=True, check=True)
             return result.stdout.strip(), result.stderr.strip()
@@ -40,7 +43,10 @@ class Connector(BaseConnector):
             return None, e.stderr
 
     def _copy_to_remote(self, local_path, remote_path):
-        scp_command = ["scp", "-i", self.ssh_key_path, local_path, f"{self.username}@{self.hostname}:{remote_path}"]
+        if self.ssh_key_path:
+            scp_command = ["scp", "-i", self.ssh_key_path, local_path, f"{self.username}@{self.hostname}:{remote_path}"]
+        else:
+            scp_command = ["scp", local_path, f"{self.username}@{self.hostname}:{remote_path}"]
         try:
             subprocess.run(scp_command, check=True)
             return True
@@ -53,7 +59,10 @@ class Connector(BaseConnector):
 
     def _copy_from_remote(self, remote_path, local_path):
         os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        scp_command = ["scp", "-r", "-i", self.ssh_key_path, f"{self.username}@{self.hostname}:{remote_path}", local_path]
+        if self.ssh_key_path:
+            scp_command = ["scp", "-r", "-i", self.ssh_key_path, f"{self.username}@{self.hostname}:{remote_path}", local_path]
+        else:
+            scp_command = ["scp", "-r", f"{self.username}@{self.hostname}:{remote_path}", local_path]
         try:
             subprocess.run(scp_command, check=True)
             return True
@@ -77,7 +86,7 @@ class Connector(BaseConnector):
                 "Input files for Job %s are not being prepared due to dry_run.",
                 job_id
             )
-            return remote_job_dir
+            return os.path.join(remote_job_dir, "fake_params.json")
 
         self._execute_remote_command(command)
 
@@ -162,7 +171,7 @@ class Connector(BaseConnector):
 
     def retrieve_job_results(self, job_id: int) -> bool:
         """Copies results from the remote HPC to the local filesystem."""
-        remote_output_dir = os.path.join(self.remote_base_dir, str(job_id), "output")
+        remote_output_dir = os.path.join(self.remote_base_dir, str(job_id))
         local_output_dir = os.path.join(settings.LOCAL_JOB_DIRECTORY, str(job_id))
         module_logger.info(
             "Copying results from %s to %s.",
