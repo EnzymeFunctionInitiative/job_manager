@@ -7,7 +7,7 @@ EXECUTION_CONNECTOR = 'LOCAL'
 DRY_RUN = True
 
 
-# --- Logging --- 
+# --- Logging ---
 LOG_FILE_PATH = "/path/to/a/job_manager.log"
 
 
@@ -49,16 +49,16 @@ REMOTE_NEXTFLOW_CONFIG_PATH = "/path/to/nextflow/config"
 REMOTE_NEXTFLOW_PIPELINE_DIR = "/path/to/your/EST/pipeline/dir"
 
 
-# --- Email Configuration ---
-EMAIL_HOST = "smtp.example.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "your-email@example.com"
-EMAIL_HOST_PASSWORD = "your-email-password"
-EMAIL_SENDER = "noreply@example.com"
+## --- Email Configuration ---
+#EMAIL_HOST = "smtp.example.com"
+#EMAIL_PORT = 587
+#EMAIL_USE_TLS = True
+#EMAIL_HOST_USER = "your-email@example.com"
+#EMAIL_HOST_PASSWORD = "your-email-password"
+#EMAIL_SENDER = "noreply@example.com"
 
 
-# --- Hard-coded Input Parameters for Nextflow Pipelines -- 
+# --- Hard-coded Input Parameters for Nextflow Pipelines ---
 NEXTFLOW_PARAMS = {
     "efi_config": "/path/to/efi.config",   # this is the path to the config file for EFI DB access
     "efi_db": "efi_202503", # name of the database to be used in the EFI tools
