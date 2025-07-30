@@ -13,26 +13,51 @@ class BaseConnector(ABC):
     """
 
     @abstractmethod
-    def prepare_job_environment(self, job_id: int, params_dict: Dict[str, Any], input_file_local_path: Optional[str]) -> Optional[str]:
+    def prepare_job_environment(
+            self,
+            job_id: int,
+            params_dict: Dict[str, Any],
+            input_file_local_path: Optional[str]
+        ) -> Optional[str]:
         """
         Prepares the environment for a job run.
         This includes creating directories, writing parameter files, and staging input data.
 
-        :param job_id: The unique ID of the job.
-        :param params_dict: A dictionary of parameters to be written to a JSON file.
-        :param input_file_local_path: The local path to an input file that needs to be staged.
-        :return: The path to the parameters file on the cluster, or None if preparation fails.
+        Parameters
+        ----------
+            job_id
+                The unique ID of the job.
+            params_dict
+                A dictionary of parameters to be written to a JSON file.
+            input_file_local_path
+                The local path to an input file that needs to be staged.
+
+        Results
+        -------
+            The path to the parameters file on the cluster, or None if 
+            preparation fails.
         """
         pass
 
     @abstractmethod
-    def submit_job(self, job_id: int, cluster_params_path: str) -> Optional[int]:
+    def submit_job(
+            self,
+            job_id: int,
+            cluster_params_path: str
+        ) -> Optional[int]:
         """
         Submits the job to the cluster's scheduler.
 
-        :param job_id: The unique ID of the job.
-        :param cluster_params_path: The path to the parameters file on the cluster.
-        :return: The scheduler's job ID, or None if submission fails.
+        Parameters
+        ----------
+            job_id
+                The unique ID of the job.
+            cluster_params_path
+                The path to the parameters file on the cluster.
+
+        Results
+        -------
+            The scheduler's job ID, or None if submission fails.
         """
         pass
 
@@ -41,8 +66,15 @@ class BaseConnector(ABC):
         """
         Checks the status of a job on the cluster.
 
-        :param scheduler_job_id: The scheduler's job ID.
-        :return: A string representing the job status (e.g., "RUNNING", "COMPLETED", "FAILED").
+        Parameters
+        ----------
+            scheduler_job_id
+                The scheduler's job ID.
+
+        Results
+        -------
+            A Status enum state representing the job status (e.g.,
+            Status.RUNNING, Status.COMPLETED, Status.FAILED).
         """
         pass
 
@@ -50,9 +82,16 @@ class BaseConnector(ABC):
     def retrieve_job_results(self, job_id: int) -> bool:
         """
         Retrieves the results of a completed job.
-        For remote connectors, this copies data back. For local ones, it might be a no-op.
+        For remote connectors, this copies data back. For local ones, it might
+        be a no-op.
 
-        :param job_id: The unique ID of the job.
-        :return: True if successful, False otherwise.
+        Parameters
+        ----------
+            job_id
+                The unique ID of the job.
+
+        Results
+        -------
+            True if successful, False otherwise.
         """
         pass

@@ -51,7 +51,7 @@ class ResultsParser:
         with open(file_path) as stats:
             results_dict = json.load(stats)
         
-        # loop over the key:value pairs from the nf-output dict, check whether 
+        # loop over the key:value pairs from the nf-output dict, check whether
         # the key maps to a column name in the Job table, and apply mapping
         # when needed. Add key:value pairs to the updates_dict.
         updates_dict = {}

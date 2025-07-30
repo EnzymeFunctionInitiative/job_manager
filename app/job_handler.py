@@ -29,8 +29,39 @@ class JobHandler:
         self.parser = ResultsParser()
         self.dry_run = settings.DRY_RUN
 
-    def process_new_job(self, job: Job):
-        """Handles the submission of a new job by delegating to the connector."""
+    def process_new_job(self, job: Job) -> Dict[str, Any]:
+        """
+        Handles the submission of a new job by delegating to the connector.
+        1) Check whether uploaded files are present for the job.
+        2) Call the `self._create_parameter_dict()` method on the job object
+           to create a dictionary of important input parameters. Send this
+           dictionary to the `connector.prepare_job_environment()` method to
+           be handled appropriately for the site-specific setup.
+        3) Having prepared the working space, run the job on the compute
+           resource by way of the `connector.submit_job()` method.
+        4) Make an update dictionary, filled with any new values to be passed
+           to the job object.
+
+        Arguments
+        ---------
+            job
+                Job class instance. Expected to have at least the `id` and
+                `pipeline` attributes.
+               
+        Returns
+        -------
+            A dictionary of updatable keys and associated new values to be used
+            to update the job object. See the job object's
+            `get_updatable_attrs()` method and attributes labeled with
+            `is_updatable` meta-tags.
+
+                and a set of interface methods:
+                    `get_parameters_dict()`,
+                    `get_filter_parameters()`,
+                    `get_updatable_attrs()`,
+                    `get_result_key_mapping()`
+
+        """
         pipeline = str(job.pipeline)
         module_logger.info(
             "Processing NEW job: %s is a %s job",
@@ -38,7 +69,7 @@ class JobHandler:
             pipeline
         )
         
-        # 1. Get job parameters and input file path
+        # 1. Get input file path, if it exists.
         input_file = None
         if isinstance(job, FilenameParameters) and job.jobFilename:
             file_path = os.path.join(
@@ -56,7 +87,7 @@ class JobHandler:
                 )
                 return {STATUS_KEY: Status.FAILED}
 
-        # 2. Prepare the job environment using the connector
+        # 2. Prepare the job environment using the connector.
         params = self._create_parameter_dict(job)
         cluster_params_path = self.connector.prepare_job_environment(
             job.id,
@@ -71,13 +102,14 @@ class JobHandler:
             )
             return {STATUS_KEY: Status.FAILED}
 
-        # 3. Submit the job using the connector
+        # 3. Submit the job using the connector.
         scheduler_job_id = self.connector.submit_job(
             job.id,
             cluster_params_path,
             pipeline,
         )
 
+        # 4. Gather updates to be pushed to the Job table.
         updates_dict = {}
         if scheduler_job_id:
             updates_dict[STATUS_KEY] = Status.RUNNING
@@ -97,7 +129,26 @@ class JobHandler:
         return updates_dict
 
     def process_running_job(self, job: Job):
-        """Checks the status of a running job."""
+        """
+        Checks the status of a running job by delegating to the connector. If
+        the `connector.get_job_status()` returns Status.FINISHED, gather the
+        result files by delegating that to the connector as well via the
+        `connector.retrieve_job_results()` method. Process the result files to
+        gather tabular values via the `self._process_results()` method.
+
+        Arguments
+        ---------
+            job
+                Job class instance. Expected to have at least the `id` and
+                `pipeline` attributes.
+               
+        Returns
+        -------
+            A dictionary of updatable keys and associated new values to be used
+            to update the job object. See the job object's
+            `get_updatable_attrs()` method and attributes labeled with
+            `is_updatable` meta-tags.
+        """
         module_logger.info(
             "Checking RUNNING job: %s (Scheduler ID: %s)",
             job.id,
@@ -127,7 +178,7 @@ class JobHandler:
             self.connector.retrieve_job_results(job)
             
             # Parse result file(s)
-            results_dict = self.process_results(job)
+            results_dict = self._process_results(job)
             updates_dict.update(results_dict)
            
             # update the timeCompleted column
@@ -144,7 +195,7 @@ class JobHandler:
         
         return updates_dict
 
-    def process_results(self, job: Job) -> Dict[str, Any]:
+    def _process_results(self, job: Job) -> Dict[str, Any]:
         """
         A job has completed but important summary data needs to be pulled from
         results files such as stats.json so the associated columns in
