@@ -6,6 +6,12 @@ import logging.handlers
 from enum import Enum
 
 class logger_names(str, Enum):
+    """
+    String Enum to contain the names for the various loggers used.
+    Names/strings follow the expected magic naming of parent.child names. In
+    this regard, job_manager is the parent logger with children loggers for
+    each module that gets called.
+    """
     MAIN = "job_manager"
     PLUGIN_LOADER = "job_manager.plugin_loader"
     DATABASE = "job_manager.database"
@@ -16,14 +22,18 @@ def setup_logger(
         name,
         log_file,
         file_level=logging.DEBUG,
-        console_level=logging.DEBUG
+        console_level=logging.WARNING
     ) -> logging.Logger:
-    """ Set up as a logging manager that writes to file and to stdout. """
+    """
+    Set up as a logging manager that writes to file and to stdout. Only used to
+    set up the logger_names.MAIN logger, all children loggers propagate their
+    log events to the parent logger.
+    """
     # create the logger, which can control multiple streams for the logged
     # messages
     logger = logging.getLogger(name)
     logger.setLevel(file_level)
-    
+
     # create a file handler that will write logging messages out to a file
     file_handler = logging.FileHandler(
         log_file,
