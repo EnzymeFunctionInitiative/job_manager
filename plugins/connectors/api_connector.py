@@ -9,6 +9,7 @@ import requests
 import zipfile
 from io import BytesIO
 from dataclasses import dataclass
+from enum import Enum
 
 from config import settings
 from plugins.base_connector import BaseConnector
@@ -22,7 +23,7 @@ module_logger = logging.getLogger(logger_names.CONNECTOR)
 api_file_field_str = "X-Filename"
 api_job_str = "job_id"
 
-class RequestMethod(StrEnum):
+class RequestMethod(str, Enum):
     GET = "GET"
     POST = "POST"
 #    OPTIONS = "OPTIONS"
