@@ -47,7 +47,8 @@ API_DOWNLOAD_HOOK = "download"
 API_LS_HOOK = "list_dir"
 API_SUBMIT_HOOK = "submit"
 API_CHECK_STATUS_HOOK = "check_status"
-# can be an undefined, an empty dictionary, or filled with important header
+
+# can be undefined, an empty dictionary, or filled with important header
 # info needed to access the API
 API_HEADER = {}	
 

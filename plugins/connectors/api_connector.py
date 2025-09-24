@@ -1,15 +1,16 @@
 # plugins/connectors/api_connector.py
 
-import os
-import json
-import tempfile
-from typing import Tuple, Dict, List, Any, Optional
-import logging
-import requests
-import zipfile
-from io import BytesIO
 from dataclasses import dataclass
 from enum import Enum
+from io import BytesIO
+import json
+import logging
+import os
+import tempfile
+from typing import Tuple, Dict, List, Any, Optional
+import zipfile
+
+import requests
 
 from config import settings
 from plugins.base_connector import BaseConnector
@@ -26,11 +27,11 @@ api_job_str = "job_id"
 class RequestMethod(str, Enum):
     GET = "GET"
     POST = "POST"
-#    OPTIONS = "OPTIONS"
-#    GET = "HEAD"
-#    GET = "PUT"
-#    GET = "PATCH"
-#    DELETE = "DELETE"
+    OPTIONS = "OPTIONS"
+    HEAD = "HEAD"
+    PUT = "PUT"
+    PATCH = "PATCH"
+    DELETE = "DELETE"
 
 @dataclass
 class ApiResponse:
@@ -196,9 +197,6 @@ class Connector(BaseConnector):
                 + f" dry_run."
             )
             return "fake/path"
-
-        
-        # NOTE: API can create working directory? extract zip? _before the qsub call happens_
 
         # make a temp directory within which the params and zip file are written
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -450,13 +448,13 @@ class Connector(BaseConnector):
         output_dir_path = os.path.dirname(os.path.realpath(results_zip_path))
         output_dir_path.mkdir(parents=True, exist_ok=True)
 
-        # the result.response.content zip file may be large so check the lengt
+        # the result.response.content zip file may be large so check the length
         # first and determine whether it needs to be written to a zip file on
         # storage or if it can be streamed from the response straight to
         # extraction of all files.
         # length cutoff is hardset at 1 GB for now. 
         if result.content_length < 10**9:
-            z = zipfile.ZipFile(io.BytesIO(content))
+            z = zipfile.ZipFile(io.BytesIO(result.response.content))
             try:
                 z.extractall(output_dir_path)
             
@@ -472,7 +470,7 @@ class Connector(BaseConnector):
                 z.cloes()
             ## NOTE: uncomment if the zip file should be written to storage too
             #with open(results_zip_path, "wb") as out_zip:
-            #    out_zip.write(content)
+            #    out_zip.write(result.response.content)
 
         else:
             with open(results_zip_path, "wb") as out_zip:
@@ -489,55 +487,4 @@ class Connector(BaseConnector):
             output_dir_path
         )
         return True
-
-# move these to a utility.py script in the app?
-
-def zip_files(zip_file_path: Path, file_list: List[str | Path]):
-    """
-    Zip up the files in the list.
-
-    Arguments
-    ---------
-        zip_file_path
-            Path, path where the zip file will be written.
-        file_list
-            List[str | Path], contains paths to files to be zipped up.
-    """
-    try:
-        zip_file_path.parent.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(zip_file_path, "w") as zip_file:
-            for file_path in file_list:
-                zip_file.write(file_path, arcname = file_path.name)
-    except zipfile.BadZipFile as e:
-        print(f"Zipping files {file_list} failed.\n{e}")
-        raise
-    except OSError as e:
-        print(f"Zipping files {file_list} failed.\n{e}")
-        raise
-
-def unzip_files(
-        zip_file_path: Path | str | None,
-        directory_to_extract_to: Path
-    ) -> List[str]:
-    """
-    Unzip the files in a zip file to a directory.
-
-    Arguments
-    ---------
-        zip_file_contents
-            bytes, contents from the requests.get() call to download a zip file.
-        parent_directory
-            Path or string, location within which the files in the zip file will
-            be extracted.
-    """
-    directory_to_extract_to.mkdir(parents=True, exist_ok=True)
-    try:
-        with zipfile.ZipFile(zip_file_path, "r") as zip_file:
-            zip_file.extractall(directory_to_extract_to)
-    except zipfile.BadZipFile as e:
-        print(f"Unzipping {zip_file_path} failed.\n{e}")
-        raise
-    except OSError as e:
-        print(f"Unzipping {zip_file_path} failed.\n{e}")
-        raise
 
