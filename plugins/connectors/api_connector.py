@@ -64,6 +64,7 @@ class ApiResponse:
         may be in place that needs to be caught that causes the job manager to
         end without undue updates to the Job table.
         """
+        pass
 
     #@property
     #def typed_content(self):
@@ -147,7 +148,9 @@ class Connector(BaseConnector):
                 interface methods.
         """
         try:
-            return ApiResponse(response = requests.get(url, **kwargs))
+            return ApiResponse(
+                response = requests.request(method, url, **kwargs)
+            )
         except requests.exception.RequestException as e:
             return ApiResponse(error = str(e))
 
