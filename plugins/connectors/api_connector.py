@@ -82,18 +82,18 @@ class Connector(BaseConnector):
         self.dry_run = settings.DRY_RUN
 
         # root API url
-        self.base_api_url = settings.api_base_url
+        self.base_api_url = settings.API_BASE_URL
         # web hook strings to be added to the base_api_url
-        self.upload = settings.api_upload_hook
-        self.download = settings.api_download_hook
-        self.ls = settings.api_ls_hook
-        self.submit = settings.api_submit_hook
-        self.check_status = settings.api_check_status_hook
-        # settings.api_header can be bare-bones, just containing the necessary
+        self.upload = settings.API_UPLOAD_HOOK
+        self.download = settings.API_DOWNLOAD_HOOK
+        self.ls = settings.API_LS_HOOK
+        self.submit = settings.API_SUBMIT_HOOK
+        self.check_status = settings.API_CHECK_STATUS_HOOK
+        # settings.API_HEADER can be bare-bones, just containing the necessary
         # details to access the API.
-        if settings.api_header:
+        if settings.API_HEADER:
             self.base_header = (
-                settings.api_header |
+                settings.API_HEADER |
                 {"Content-Type": "application/octet-stream"}
             )  # by default, assume content type is binary
         else:
@@ -442,7 +442,7 @@ class Connector(BaseConnector):
       
         # contents is a bytes object of the full results.zip file gathered via
         # the API call. Handle that zip file appropriately.
-        results_zip_path = f"{settings.local_storage_dir}/{job.id}/results.zip"
+        results_zip_path = f"{settings.LOCAL_JOB_DIRECTORY}/{job.id}/results.zip"
         output_dir_path = os.path.dirname(os.path.realpath(results_zip_path))
         output_dir_path.mkdir(parents=True, exist_ok=True)
 
