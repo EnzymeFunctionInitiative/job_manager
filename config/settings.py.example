@@ -40,6 +40,18 @@ PARTITION = "queue_name"
 # Set a maximum number of running Jobs to be submitted at any one time
 MAX_NUM_RUNNING_JOB = 3
 
+# --- API Configuration (Used by 'api' connector) ---
+API_BASE_URL = "https://api.example.com/"
+API_UPLOAD_HOOK = "upload"
+API_DOWNLOAD_HOOK = "download"
+API_LS_HOOK = "list_dir"
+API_SUBMIT_HOOK = "submit"
+API_CHECK_STATUS_HOOK = "check_status"
+
+# can be undefined, an empty dictionary, or filled with important header
+# info needed to access the API
+API_HEADER = {}	
+
 # --- Cluster Configuration (Used by both connectors) ---
 # The path to the Nextflow executable on the cluster
 REMOTE_NEXTFLOW_PATH = "/path/to/nextflow"
